@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import React, { Suspense } from 'react' // Import Suspense
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useUserContext } from '@/context/UserContext'
 import { useSubscription } from '@/hooks/useSubscription'
@@ -10,11 +10,6 @@ export default function PremiumContentPage() {
   const router = useRouter()
   const { currentUser } = useUserContext()
   const { isSubscribed, isLoading, error } = useSubscription()
-  const searchParams = useSearchParams()
-
-  // Get booking details from query params (provide defaults or handle missing params)
-  const bookingTotal = searchParams.get('total') ?? 'N/A'
-  const bookingDuration = searchParams.get('duration') ?? 'N/A'
 
   // Only redirect if we're certain about the subscription status
   React.useEffect(() => {
@@ -57,14 +52,40 @@ export default function PremiumContentPage() {
 
   return (
     <>
-      {/* Removed container, added padding directly */}
-      <div className="pt-12 pb-6">
-        <div className="bg-muted p-6 rounded-lg border border-border mb-6 text-center"> {/* Added text-center and increased padding */}
-          <h2 className="text-3xl font-semibold mb-2">${bookingTotal}</h2> {/* Increased size, added $ */}
-          <p className="text-lg text-muted-foreground">Total for {bookingDuration} nights</p> {/* Increased size, added muted color */}
-        </div>
-      </div>
-      <PremiumContentClient />
+      {/* Wrap the part using useSearchParams in Suspense */}
+      <Suspense fallback={<PremiumContentLoading />}>
+        <PremiumContentInner />
+      </Suspense>
     </>
   )
 } 
+
+// New component to contain logic using useSearchParams
+function PremiumContentInner() {
+  const searchParams = useSearchParams()
+  const bookingTotal = searchParams.get('total') ?? 'N/A'
+  const bookingDuration = searchParams.get('duration') ?? 'N/A'
+
+  return (
+    <>
+      {/* Booking Summary Header */}
+      <div className="pt-12 pb-6">
+        <div className="bg-muted p-6 rounded-lg border border-border mb-6 text-center">
+          <h2 className="text-3xl font-semibold mb-2">${bookingTotal}</h2>
+          <p className="text-lg text-muted-foreground">Total for {bookingDuration} nights</p>
+        </div>
+      </div>
+      {/* The actual premium content */}
+      <PremiumContentClient />
+    </>
+  )
+}
+
+// Simple loading component for the Suspense fallback
+function PremiumContentLoading() {
+  return (
+    <div className="container py-12 text-center">
+      <p>Loading booking details...</p>
+    </div>
+  )
+}
