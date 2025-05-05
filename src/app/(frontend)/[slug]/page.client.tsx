@@ -23,17 +23,19 @@ const PageClient: React.FC<PageClientProps> = ({ page, draft, url }) => {
   const { currentUser } = useUserContext()
   const { isSubscribed, isLoading, error } = useSubscription()
 
-  const isHomePage = url === '/';
+  const isPublicPage = url === '/';
 
   useEffect(() => {
     setHeaderTheme('light')
   }, [setHeaderTheme])
 
   useEffect(() => {
-    if (isHomePage) {
+    // If it's the homepage or terms-and-conditions, don't enforce login/subscription
+    if (isPublicPage || url === '/terms-and-conditions') {
       return;
     }
 
+    // For all other pages, check user and subscription status
     if (page && !isLoading && !error) {
       if (!currentUser) {
         router.push('/login')
@@ -41,13 +43,14 @@ const PageClient: React.FC<PageClientProps> = ({ page, draft, url }) => {
         router.push('/subscribe')
       }
     }
-  }, [page, currentUser, isSubscribed, isLoading, error, router, isHomePage])
+    // Ensure all dependencies used in the effect are listed
+  }, [page, currentUser, isSubscribed, isLoading, error, router, isPublicPage, url])
 
   if (!page) {
     return <PayloadRedirects url={url} disableNotFound={false} />
   }
 
-  if (!isHomePage) {
+  if (!isPublicPage && url !== '/terms-and-conditions') {
     if (isLoading) {
       return (
         <div className="container py-12">
@@ -65,7 +68,7 @@ const PageClient: React.FC<PageClientProps> = ({ page, draft, url }) => {
     }
   }
 
-  const shouldRenderContent = isHomePage || (currentUser && isSubscribed)
+  const shouldRenderContent = isPublicPage || url === '/terms-and-conditions' || (currentUser && isSubscribed)
 
   if (shouldRenderContent) {
     const { hero, layout } = page

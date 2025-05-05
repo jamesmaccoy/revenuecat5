@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSideURL } from './utilities/getURL'
 
 // Paths that require authentication and subscription
-const PROTECTED_PATHS = ['/admin', '/premium-content']
+const PROTECTED_PATHS = ['/admin', '/join']
 
 // Paths that are always allowed
 const PUBLIC_PATHS = ['/login', '/subscribe', '/register']

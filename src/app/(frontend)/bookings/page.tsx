@@ -1,5 +1,5 @@
-import { getPayload, Where } from 'payload'
-import config from '@payload-config'
+import { Where } from 'payload/types'
+import configPromise from '@payload-config'
 import React from 'react'
 import { Post, User } from '@/payload-types'
 import { getMeUser } from '@/utilities/getMeUser'
@@ -8,17 +8,23 @@ import BookingCard from '../../../components/Bookings/BookingCard'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
+import { cookies } from 'next/headers'
+// import { BookingsList } from './BookingsList'
 
 export default async function Bookings() {
-  const currentUser = await getMeUser()
+  const { user: currentUser } = await getMeUser({
+    nullUserRedirect: `/login?redirect=/bookings`,
+    currentUserRedirect: null,
+  })
 
   if (!currentUser) {
-    redirect('/login')
+    console.error('User should have been redirected by getMeUser, but was not.')
+    redirect('/login?redirect=/bookings')
   }
 
   const [upcomingBookings, pastBookings] = await Promise.all([
-    getBookings('upcoming', currentUser.user),
-    getBookings('past', currentUser.user),
+    getBookings('upcoming', currentUser),
+    getBookings('past', currentUser),
   ])
 
   const formattedUpcomingBookings = upcomingBookings.docs.map((booking) => ({
@@ -87,7 +93,7 @@ export default async function Bookings() {
 }
 
 const getBookings = async (type: 'upcoming' | 'past', currentUser: User) => {
-  const payload = await getPayload({ config })
+  const payload = await getPayload({ config: configPromise })
 
   let whereQuery: Where
 
