@@ -13,7 +13,7 @@ export default function JoinPage() {
   const { currentUser } = useUserContext()
   const { isSubscribed, isLoading, error } = useSubscription()
 
-  // Only redirect if we're certain about the subscription status and user state
+  // Only redirect if we're certain about the subscription status
   React.useEffect(() => {
     if (!isLoading && !error) {
       if (!currentUser) {
@@ -27,7 +27,7 @@ export default function JoinPage() {
   if (isLoading) {
     return (
       <div className="container py-12">
-        <h1 className="text-3xl font-bold mb-6">Join a booking</h1>
+        <h1 className="text-3xl font-bold mb-6">Join</h1>
         <p>Loading...</p>
       </div>
     )
@@ -36,7 +36,7 @@ export default function JoinPage() {
   if (error) {
     return (
       <div className="container py-12">
-        <h1 className="text-3xl font-bold mb-6">Join a booking 2</h1>
+        <h1 className="text-3xl font-bold mb-6">Join</h1>
         <p className="text-error">Error: {error.message}</p>
       </div>
     )
@@ -46,7 +46,7 @@ export default function JoinPage() {
   if (!currentUser || !isSubscribed) {
     return (
       <div className="container py-12">
-        <h1 className="text-3xl font-bold mb-6">Premium Content</h1>
+        <h1 className="text-3xl font-bold mb-6">Join</h1>
         <p>Loading...</p>
       </div>
     )

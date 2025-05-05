@@ -5,7 +5,7 @@ import { User } from '@/payload-types'
 import { Button } from '@/components/ui/button' // Assuming you have these components
 import { Input } from '@/components/ui/input' // Assuming you have these components
 
-export default function PremiumContentClient() {
+export default function joinClient() {
   const [guests, setGuests] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
