@@ -5,6 +5,7 @@ import { createContext, useCallback, useContext, useEffect, useState } from 'rea
 
 type UserContextType = {
   currentUser: User | null
+  isLoading: boolean
   handleAuthChange: () => void
 }
 
@@ -12,18 +13,26 @@ const UserContext = createContext<UserContextType | undefined>(undefined)
 
 export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
 
   const fetchCurrentUser = useCallback(async () => {
-    const req = await fetch(`/api/users/me`, {
-      method: 'GET',
-      credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    })
-    const data = await req.json()
-
-    setCurrentUser(data?.user || null)
+    setIsLoading(true)
+    try {
+      const req = await fetch(`/api/users/me`, {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+      const data = await req.json()
+      setCurrentUser(data?.user || null)
+    } catch (error) {
+      console.error('Error fetching current user:', error);
+      setCurrentUser(null);
+    } finally {
+      setIsLoading(false)
+    }
   }, [])
 
   useEffect(() => {
@@ -34,7 +43,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     fetchCurrentUser()
   }
 
-  return <UserContext value={{ currentUser, handleAuthChange }}>{children}</UserContext>
+  return <UserContext.Provider value={{ currentUser, isLoading, handleAuthChange }}>{children}</UserContext.Provider>
 }
 
 export const useUserContext = () => {

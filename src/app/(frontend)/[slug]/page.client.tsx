@@ -20,8 +20,8 @@ interface PageClientProps {
 const PageClient: React.FC<PageClientProps> = ({ page, draft, url }) => {
   const { setHeaderTheme } = useHeaderTheme()
   const router = useRouter()
-  const { currentUser } = useUserContext()
-  const { isSubscribed, isLoading, error } = useSubscription()
+  const { currentUser, isLoading: isUserLoading } = useUserContext()
+  const { isSubscribed, isLoading: isSubscriptionLoading, error: subscriptionError } = useSubscription()
 
   const isPublicPage = url === '/' || url === '/terms-and-conditions';
 
@@ -35,45 +35,57 @@ const PageClient: React.FC<PageClientProps> = ({ page, draft, url }) => {
       return;
     }
 
-    // For protected pages, first check authentication status
-    // Assuming currentUser being null means user is not logged in (or context is loading)
-    // TODO: Consider adding a loading state from useUserContext if available to prevent premature redirect
+    // Wait for user context to finish loading
+    if (isUserLoading) {
+      console.log('User context loading...')
+      return; // Don't proceed until user context is loaded
+    }
+
+    // For protected pages, *after* user context has loaded, check authentication status
     if (!currentUser) {
-      console.log('User not found, redirecting to login from page client effect.')
+      console.log('User context loaded, user not found, redirecting to login.')
       router.push('/login');
       return; // Don't proceed to subscription checks if not logged in
     }
 
-    // If authenticated, *then* check subscription status (once loaded and no other errors)
-    if (!isLoading && !error && !isSubscribed) {
+    // Wait for subscription check to finish loading (if user is logged in)
+    if (isSubscriptionLoading) {
+      console.log('Subscription context loading...');
+      return; // Don't proceed until subscription check is done
+    }
+
+    // If authenticated, subscription loaded, no error, *then* check if subscribed
+    if (!subscriptionError && !isSubscribed) {
       console.log('User authenticated but not subscribed, redirecting to subscribe.')
       router.push('/subscribe');
     }
 
-  }, [currentUser, isSubscribed, isLoading, error, router, isPublicPage, url]); // Add isPublicPage back to dependencies
+  }, [currentUser, isUserLoading, isSubscribed, isSubscriptionLoading, subscriptionError, router, isPublicPage, url]); // Updated dependencies
 
   if (!page) {
     return <PayloadRedirects url={url} disableNotFound={false} />
   }
 
-  if (!isPublicPage && url !== '/terms-and-conditions') {
-    if (isLoading) {
+  // Show loading/error only for pages that require subscription check
+  if (!isPublicPage) { // Simplified check using isPublicPage
+    if (isUserLoading || isSubscriptionLoading) { // Check both loading states
       return (
         <div className="container py-12">
-          <p>Loading user data...</p>
+          <p>Loading user data...</p> // Preparing your booking
         </div>
       )
     }
 
-    if (error) {
+    if (subscriptionError) { // Show subscription error only if it occurs
       return (
         <div className="container py-12">
-          <p className="text-error">Error loading subscription: {error.message}</p>
+          <p className="text-error">Error loading subscription: {subscriptionError.message}</p>
         </div>
       )
     }
   }
 
+  // Allow rendering for public pages or authenticated+subscribed users (after loading)
   const shouldRenderContent = isPublicPage || (currentUser && isSubscribed)
 
   if (shouldRenderContent) {

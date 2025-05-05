@@ -36,7 +36,6 @@ export async function middleware(request: NextRequest) {
   // Check subscription status for protected routes
   if (isProtectedPath) {
     try {
-      // Create a new request to our subscription check endpoint
       const checkUrl = new URL('/api/check-subscription', request.url)
       const checkResponse = await fetch(checkUrl, {
         headers: {
@@ -44,12 +43,25 @@ export async function middleware(request: NextRequest) {
         },
       })
 
-      const { hasActiveSubscription, customerId } = await checkResponse.json()
+      // Expect activeEntitlements array from the API
+      const { hasActiveSubscription, customerId, activeEntitlements } = await checkResponse.json()
 
-      if (!hasActiveSubscription) {
-        console.log('No active subscription found, redirecting to subscribe')
-        return NextResponse.redirect(new URL('/subscribe', request.url))
+      // --- Admin Path Specific Check ---
+      if (pathname.startsWith('/admin')) {
+        if (!activeEntitlements || !activeEntitlements.includes('subscription_pro')) {
+          console.log('User does not have \'subscription_pro\', redirecting to /bookings');
+          return NextResponse.redirect(new URL('/bookings', request.url));
+        }
+        // If user has 'subscription_pro', allow access (handled later)
+      } 
+      // --- End Admin Path Specific Check ---
+      
+      // --- General Protected Path Check (excluding admin path already checked) ---
+      else if (!hasActiveSubscription) {
+        console.log('No active subscription found, redirecting to subscribe');
+        return NextResponse.redirect(new URL('/subscribe', request.url));
       }
+      // --- End General Protected Path Check ---
 
       // If we have a customer ID but no cookie, set it
       if (customerId && !request.cookies.get('rc-customer-id')) {
