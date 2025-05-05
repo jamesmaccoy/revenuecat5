@@ -1,13 +1,15 @@
 import type { Metadata } from 'next'
-
 import { PayloadRedirects } from '@/components/PayloadRedirects'
 import configPromise from '@payload-config'
 import { getPayload } from 'payload'
 import { draftMode } from 'next/headers'
 import React, { cache } from 'react'
 import { homeStatic } from '@/endpoints/seed/home-static'
+import { redirect, notFound } from 'next/navigation'
+import { getCachedRedirects } from '@/utilities/getRedirects'
+import { getCachedDocument } from '@/utilities/getDocument'
 
-import type { Page as PageType } from '@/payload-types'
+import type { Page as PageType, Post } from '@/payload-types'
 
 import { RenderBlocks } from '@/blocks/RenderBlocks'
 import { RenderHero } from '@/heros/RenderHero'
@@ -47,7 +49,35 @@ type Args = {
 export default async function Page({ params: paramsPromise }: Args) {
   const { isEnabled: draft } = await draftMode()
   const { slug = 'home' } = await paramsPromise
-  const url = '/' + slug
+  const url = '/' + (slug === 'home' ? '' : slug)
+
+  const redirects = await getCachedRedirects()()
+  const redirectItem = redirects.find((r) => r.from === url)
+
+  if (redirectItem) {
+    if (redirectItem.to?.url) {
+      redirect(redirectItem.to.url)
+    }
+
+    if (redirectItem.to?.reference?.value) {
+      let redirectUrl: string | undefined;
+      const { relationTo, value } = redirectItem.to.reference;
+
+      if (typeof value === 'string') {
+        const document = (await getCachedDocument(relationTo, value)()) as PageType | Post;
+        if (document?.slug) {
+          redirectUrl = `${relationTo !== 'pages' ? `/${relationTo}` : ''}/${document.slug}`; 
+        }
+      } else if (typeof value === 'object' && value?.slug) {
+         redirectUrl = `${relationTo !== 'pages' ? `/${relationTo}` : ''}/${value.slug}`;
+      }
+
+      if (redirectUrl) {
+        redirect(redirectUrl);
+      }
+    }
+    console.warn(`Redirect found for ${url} but has invalid target.`);
+  }
 
   let page: PageType | null
 
@@ -55,29 +85,15 @@ export default async function Page({ params: paramsPromise }: Args) {
     slug,
   })
 
-  // Remove this code once your website is seeded
   if (!page && slug === 'home') {
     page = homeStatic
   }
 
   if (!page) {
-    return <PayloadRedirects url={url} />
+    return <PageClient page={page} draft={draft} url={url} />
   }
 
-  const { hero, layout } = page
-
-  return (
-    <article className="pt-16 pb-24">
-      <PageClient />
-      {/* Allows redirects for valid pages too */}
-      <PayloadRedirects disableNotFound url={url} />
-
-      {draft && <LivePreviewListener />}
-
-      <RenderHero {...hero} />
-      <RenderBlocks blocks={layout} />
-    </article>
-  )
+  return <PageClient page={page} draft={draft} url={url} />
 }
 
 export async function generateMetadata({ params: paramsPromise }): Promise<Metadata> {
@@ -97,6 +113,7 @@ const queryPageBySlug = cache(async ({ slug }: { slug: string }) => {
   const result = await payload.find({
     collection: 'pages',
     draft,
+    depth: 2,
     limit: 1,
     pagination: false,
     where: {
