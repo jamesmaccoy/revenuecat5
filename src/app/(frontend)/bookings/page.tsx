@@ -1,4 +1,4 @@
-import { Where } from 'payload/types'
+import { Where } from 'payload'
 import configPromise from '@payload-config'
 import React from 'react'
 import { Post, User } from '@/payload-types'
@@ -9,12 +9,13 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { cookies } from 'next/headers'
+import { getPayload } from 'payload'
 // import { BookingsList } from './BookingsList'
 
 export default async function Bookings() {
   const { user: currentUser } = await getMeUser({
     nullUserRedirect: `/login?redirect=/bookings`,
-    currentUserRedirect: null,
+    validUserRedirect: undefined,
   })
 
   if (!currentUser) {

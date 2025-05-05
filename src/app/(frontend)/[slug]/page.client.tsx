@@ -23,28 +23,34 @@ const PageClient: React.FC<PageClientProps> = ({ page, draft, url }) => {
   const { currentUser } = useUserContext()
   const { isSubscribed, isLoading, error } = useSubscription()
 
-  const isPublicPage = url === '/';
+  const isPublicPage = url === '/' || url === '/terms-and-conditions';
 
   useEffect(() => {
     setHeaderTheme('light')
   }, [setHeaderTheme])
 
   useEffect(() => {
-    // If it's the homepage or terms-and-conditions, don't enforce login/subscription
-    if (isPublicPage || url === '/terms-and-conditions') {
+    // Skip checks for public pages
+    if (isPublicPage) {
       return;
     }
 
-    // For all other pages, check user and subscription status
-    if (page && !isLoading && !error) {
-      if (!currentUser) {
-        router.push('/login')
-      } else if (!isSubscribed) {
-        router.push('/subscribe')
-      }
+    // For protected pages, first check authentication status
+    // Assuming currentUser being null means user is not logged in (or context is loading)
+    // TODO: Consider adding a loading state from useUserContext if available to prevent premature redirect
+    if (!currentUser) {
+      console.log('User not found, redirecting to login from page client effect.')
+      router.push('/login');
+      return; // Don't proceed to subscription checks if not logged in
     }
-    // Ensure all dependencies used in the effect are listed
-  }, [page, currentUser, isSubscribed, isLoading, error, router, isPublicPage, url])
+
+    // If authenticated, *then* check subscription status (once loaded and no other errors)
+    if (!isLoading && !error && !isSubscribed) {
+      console.log('User authenticated but not subscribed, redirecting to subscribe.')
+      router.push('/subscribe');
+    }
+
+  }, [currentUser, isSubscribed, isLoading, error, router, isPublicPage, url]); // Add isPublicPage back to dependencies
 
   if (!page) {
     return <PayloadRedirects url={url} disableNotFound={false} />
@@ -68,7 +74,7 @@ const PageClient: React.FC<PageClientProps> = ({ page, draft, url }) => {
     }
   }
 
-  const shouldRenderContent = isPublicPage || url === '/terms-and-conditions' || (currentUser && isSubscribed)
+  const shouldRenderContent = isPublicPage || (currentUser && isSubscribed)
 
   if (shouldRenderContent) {
     const { hero, layout } = page
