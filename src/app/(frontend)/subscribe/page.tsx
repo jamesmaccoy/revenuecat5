@@ -11,7 +11,7 @@ export default function SubscribePage() {
   const router = useRouter()
   const { currentUser } = useUserContext()
   const { customerInfo, isInitialized } = useRevenueCat()
-  const { isSubscribed, hasActiveSubscription, isLoading } = useSubscription()
+  const { isSubscribed, isLoading } = useSubscription()
   const [offerings, setOfferings] = useState<Package[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -24,17 +24,22 @@ export default function SubscribePage() {
 
   // Redirect to dashboard if already subscribed
   useEffect(() => {
-    if (!isLoading && hasActiveSubscription) {
+    if (!isLoading && isSubscribed) {
       console.log('User already subscribed, redirecting to /admin from useEffect.');
       router.push('/admin')
     }
-  }, [isLoading, hasActiveSubscription, router])
+  }, [isLoading, isSubscribed, router])
 
   const loadOfferings = async () => {
     try {
-      const offerings = await Purchases.getSharedInstance().getOfferings()
-      if (offerings.current && offerings.current.availablePackages.length > 0) {
-        setOfferings(offerings.current.availablePackages)
+      const fetchedOfferings = await Purchases.getSharedInstance().getOfferings()
+      console.log("Fetched Offerings Object:", fetchedOfferings); // Log the whole offerings object
+      if (fetchedOfferings.current && fetchedOfferings.current.availablePackages.length > 0) {
+        // Set the state with the packages from the CURRENT offering
+        setOfferings(fetchedOfferings.current.availablePackages)
+      } else {
+        console.warn("No current offering or packages found.");
+        setOfferings([]); // Ensure offerings is empty if none found
       }
       setLoading(false)
     } catch (err) {
@@ -63,10 +68,21 @@ export default function SubscribePage() {
     }
   };
 
+  // Filter the packages state based on the web billing product identifier
+  // Use the 'offerings' state which now holds the available packages
+  const monthly_subscription_plan = offerings.find(pkg => pkg.webBillingProduct?.identifier === 'monthly_subscription'); 
+  const annual_subscription_plan = offerings.find(pkg => pkg.webBillingProduct?.identifier === 'annual_subscription');
+  const professional_plan = offerings.find(pkg => pkg.webBillingProduct?.identifier === 'subscription_pro');
+  
+  // Log the results of filtering
+  console.log("Monthly Plan Found:", monthly_subscription_plan);
+  console.log("Annual Plan Found:", annual_subscription_plan);
+  console.log("Professional Plan Found:", professional_plan);
+
   if (!currentUser) {
     return (
       <div className="p-4">
-        <h1 className="text-2xl font-bold mb-4">Subscribe</h1>
+        <h1 className="text-2xl font-bold mb-4">Payment options</h1>
         <p>Please log in to view subscription options.</p>
       </div>
     )
@@ -75,7 +91,7 @@ export default function SubscribePage() {
   if (!isInitialized || loading) {
     return (
       <div className="p-4">
-        <h1 className="text-2xl font-bold mb-4">Subscribe</h1>
+        <h1 className="text-2xl font-bold mb-4">Payment options</h1>
         <p>Loading subscription options...</p>
       </div>
     )
@@ -84,7 +100,7 @@ export default function SubscribePage() {
   if (error) {
     return (
       <div className="p-4">
-        <h1 className="text-2xl font-bold mb-4">Subscribe</h1>
+        <h1 className="text-2xl font-bold mb-4">Payment options</h1>
         <p className="text-red-500">{error}</p>
       </div>
     )
@@ -92,43 +108,139 @@ export default function SubscribePage() {
 
   if (isLoading) {
     return (
-      <div className="container py-12">
+      <div className="container py-12 text-center">
         <p>Checking subscription status...</p>
       </div>
     )
   }
 
-  if (!hasActiveSubscription) {
+  if (isSubscribed) {
     return (
-      <div className="p-4">
-        <h1 className="text-2xl font-bold mb-4">Subscribe</h1>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {offerings.map((pkg) => {
-            const product = pkg.webBillingProduct
-            return (
-              <div key={pkg.identifier} className="border rounded-lg p-4">
-                <h2 className="text-xl font-semibold mb-2">{product.displayName}</h2>
-                <p className="mb-4">{product.description}</p>
-                <p className="text-lg font-bold mb-4">
-                  {product.currentPrice.formattedPrice}
-                </p>
-                <button
-                  onClick={() => handlePurchase(pkg)}
-                  className="w-full bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 transition-colors"
-                >
-                  Subscribe Pay Off
-                </button>
-              </div>
-            )
-          })}
+      <div className="container py-12 text-center">
+        <p>Loading your access...</p>
+      </div>
+    );
+  }
+
+  if (!isSubscribed) {
+    return (
+      <div className="container py-16 sm:py-24">
+        <div className="mx-auto max-w-2xl text-center mb-12 sm:mb-16">
+            <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl">Membership Plans</h1>
+            <p className="mt-4 text-lg leading-8 text-muted-foreground">
+              Choose the plan that best suits your needs.
+            </p>
         </div>
+
+        {/* Monthly and Annual Plans Pricing Table */}  
+        <div className="mx-auto max-w-4xl grid grid-cols-1 gap-8 md:grid-cols-2 items-start">
+          
+          {/* Monthly Plan Card - Use monthly_subscription_plan */}  
+          {monthly_subscription_plan && (() => {
+              const product = monthly_subscription_plan.webBillingProduct;
+              return (
+                <div key={monthly_subscription_plan.identifier} className="rounded-2xl border border-border p-8 shadow-sm">
+                  <h2 className="text-lg font-semibold leading-8 text-foreground">{product.displayName}</h2>
+                  <p className="mt-2 text-sm leading-6 text-muted-foreground">{product.description || 'Access all standard features.'}</p>
+                  <p className="mt-6 flex items-baseline gap-x-1">
+                    <span className="text-4xl font-bold tracking-tight text-foreground">{product.currentPrice.formattedPrice}</span>
+                    <span className="text-sm font-semibold leading-6 text-muted-foreground">/month</span>
+                  </p>
+                  <ul role="list" className="mt-8 space-y-3 text-sm leading-6 text-muted-foreground xl:mt-10">
+                    {/* Add your feature list items here */}  
+                    <li className="flex gap-x-3">Feature 1</li>
+                    <li className="flex gap-x-3">Feature 2</li>
+                    <li className="flex gap-x-3">Feature 3</li>
+                  </ul>
+                  <button
+                    onClick={() => handlePurchase(monthly_subscription_plan)}
+                    className="mt-8 block w-full rounded-md bg-secondary px-3.5 py-2.5 text-center text-sm font-semibold text-secondary-foreground shadow-sm hover:bg-secondary/80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+                  >
+                    Choose Monthly
+                  </button>
+                </div>
+              );
+          })()}
+
+          {/* Annual Plan Card (Highlighted) - Use annual_subscription_plan */}  
+          {annual_subscription_plan && (() => {
+              const product = annual_subscription_plan.webBillingProduct;
+              return (
+                <div key={annual_subscription_plan.identifier} className="relative rounded-2xl border border-primary p-8 shadow-lg">
+                  <div className="absolute top-0 -translate-y-1/2 transform rounded-full bg-primary px-3 py-1 text-xs font-semibold tracking-wide text-primary-foreground">
+                    Most popular
+                  </div>
+                  <h2 className="text-lg font-semibold leading-8 text-foreground">{product.displayName}</h2>
+                  <p className="mt-2 text-sm leading-6 text-muted-foreground">{product.description || 'Get the best value with annual billing.'}</p>
+                  <p className="mt-6 flex items-baseline gap-x-1">
+                    <span className="text-4xl font-bold tracking-tight text-foreground">{product.currentPrice.formattedPrice}</span>
+                    <span className="text-sm font-semibold leading-6 text-muted-foreground">/year</span>
+                  </p>
+                   <ul role="list" className="mt-8 space-y-3 text-sm leading-6 text-muted-foreground xl:mt-10">
+                    {/* Add your feature list items here */}  
+                    <li className="flex gap-x-3">Feature 1</li>
+                    <li className="flex gap-x-3">Feature 2</li>
+                    <li className="flex gap-x-3">Feature 3</li>
+                    <li className="flex gap-x-3">+ Annual Bonus Feature</li> 
+                  </ul>
+                  <button
+                    onClick={() => handlePurchase(annual_subscription_plan)}
+                    className="mt-8 block w-full rounded-md bg-primary px-3.5 py-2.5 text-center text-sm font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+                  >
+                    Choose Annual
+                  </button>
+                </div>
+              );
+          })()}
+        </div>
+
+        {/* Professional Plan Section - Use professional_plan */}  
+        {professional_plan && (() => {
+            const product = professional_plan.webBillingProduct;
+            return (
+              <div className="mt-16 pt-8 border-t border-border">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                  <div>
+                    {/* Placeholder Image */}  
+                    <img 
+                      src="https://img.freepik.com/free-vector/3d-metal-star-isolated_1308-117760.jpg?semt=ais_hybrid&w=740" 
+                      alt="Professional Plan illustration" 
+                      className="w-full h-auto rounded-lg shadow-md mb-4 md:mb-0"
+                    />
+                  </div>
+                  <div className="rounded-2xl border border-border p-8 shadow-sm">
+                    <h2 className="text-lg font-semibold leading-8 text-foreground">{product.displayName}</h2>
+                    <p className="mt-2 text-sm leading-6 text-muted-foreground">{product.description || 'Advanced features for professionals.'}</p>
+                    <p className="mt-6 flex items-baseline gap-x-1">
+                      <span className="text-4xl font-bold tracking-tight text-foreground">{product.currentPrice.formattedPrice}</span>
+                       {/* Adjust term display based on product */} 
+                      <span className="text-sm font-semibold leading-6 text-muted-foreground">/term</span>
+                    </p>
+                    <ul role="list" className="mt-8 space-y-3 text-sm leading-6 text-muted-foreground xl:mt-10">
+                      {/* Add your feature list items here */}  
+                      <li className="flex gap-x-3">All Standard Features</li>
+                      <li className="flex gap-x-3">Pro Feature A</li>
+                      <li className="flex gap-x-3">Pro Feature B</li>
+                      <li className="flex gap-x-3">Priority Support</li>
+                    </ul>
+                    <button
+                      onClick={() => handlePurchase(professional_plan)}
+                      className="mt-8 block w-full rounded-md bg-secondary px-3.5 py-2.5 text-center text-sm font-semibold text-secondary-foreground shadow-sm hover:bg-secondary/80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+                    >
+                      Choose Professional
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+        })()}
       </div>
     )
   }
 
   return (
-    <div className="container py-12">
-      <p>Redirecting...</p>
+    <div className="container py-12 text-center">
+      <p>Loading...</p>
     </div>
-  )
+  );
 }
