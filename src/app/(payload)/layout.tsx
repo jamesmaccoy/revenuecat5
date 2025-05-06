@@ -2,10 +2,10 @@
 /* DO NOT MODIFY IT BECAUSE IT COULD BE REWRITTEN AT ANY TIME. */
 import config from '@payload-config'
 import '@payloadcms/next/css'
-import type { ServerFunctionClient } from 'payload'
 import { handleServerFunctions, RootLayout } from '@payloadcms/next/layouts'
 import React from 'react'
-
+import { UploadHandlersProvider } from '@payloadcms/ui'
+import type { ServerFunctionClient } from 'payload'
 import { importMap } from './admin/importMap.js'
 import './custom.scss'
 
@@ -20,7 +20,7 @@ type InferredServerFunction = typeof handleServerFunctions;
 // the return type or a more specific signature if available from its JSDoc or definition.
 // For now, let's assume the prop expects something compatible with handleServerFunctions.
 
-const serverFunction: InferredServerFunction = async function (args) { // Use the inferred type
+const serverFunction: ServerFunctionClient = async function (args) {
   'use server'
   // Note: handleServerFunctions might be intended to be assigned directly,
   // or it might be a factory. The original code `const serverFunction = handleServerFunctions`
@@ -36,7 +36,7 @@ const serverFunction: InferredServerFunction = async function (args) { // Use th
 
 const Layout = ({ children }: Args) => (
   <RootLayout config={config} importMap={importMap} serverFunction={serverFunction}>
-    {children}
+    <UploadHandlersProvider>{children}</UploadHandlersProvider>
   </RootLayout>
 )
 
