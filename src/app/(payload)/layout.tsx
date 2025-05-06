@@ -13,9 +13,21 @@ type Args = {
   children: React.ReactNode
 }
 
-const serverFunction: ServerFunctionClient = async function (args) {
+// Infer the type from the imported function
+type InferredServerFunction = typeof handleServerFunctions;
+// Then, if handleServerFunctions itself is not the direct type you assign,
+// but rather the function it returns or similar, you might need to extract
+// the return type or a more specific signature if available from its JSDoc or definition.
+// For now, let's assume the prop expects something compatible with handleServerFunctions.
+
+const serverFunction: InferredServerFunction = async function (args) { // Use the inferred type
   'use server'
-  return handleServerFunctions({
+  // Note: handleServerFunctions might be intended to be assigned directly,
+  // or it might be a factory. The original code `const serverFunction = handleServerFunctions`
+  // suggests it might be assignable directly if its signature matches what RootLayout expects.
+  // The explicit async wrapper is often used to ensure 'use server' is at the top level of the server action.
+
+  return handleServerFunctions({ // Calling it here implies it's a factory or needs to be wrapped.
     ...args,
     config,
     importMap,
