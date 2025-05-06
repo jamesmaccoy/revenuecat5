@@ -92,14 +92,7 @@ export default function LoginPage() {
             </Link>
           </p>
         </div>
-      
       </div>
-      <p className="text-center text-sm tracking-wide text-xs text-muted-foreground mt-5">
-            By continuing you agree to the{' '}
-            <Link href="/terms-and-conditions" className="text-primary underline">
-              terms and conditions
-            </Link>
-          </p>
     </div>
   )
 }

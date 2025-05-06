@@ -23,12 +23,16 @@ export async function GET(request: NextRequest) {
 
     // Get customer info
     const customerInfo = await purchases.getCustomerInfo()
-    const hasActiveSubscription = Object.keys(customerInfo.entitlements.active).length > 0
+    
+    // Extract active entitlement IDs
+    const activeEntitlements = Object.keys(customerInfo.entitlements.active || {});
+    const hasActiveSubscription = activeEntitlements.length > 0;
 
     // Set the RevenueCat customer ID in a cookie for cross-device sync
     const response = NextResponse.json({ 
       hasActiveSubscription,
-      customerId: customerInfo.originalAppUserId
+      customerId: customerInfo.originalAppUserId,
+      activeEntitlements: activeEntitlements,
     })
 
     // Set the RevenueCat customer ID cookie

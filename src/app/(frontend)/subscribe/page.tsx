@@ -11,7 +11,7 @@ export default function SubscribePage() {
   const router = useRouter()
   const { currentUser } = useUserContext()
   const { customerInfo, isInitialized } = useRevenueCat()
-  const { isSubscribed } = useSubscription()
+  const { isSubscribed, hasActiveSubscription, isLoading } = useSubscription()
   const [offerings, setOfferings] = useState<Package[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -24,10 +24,11 @@ export default function SubscribePage() {
 
   // Redirect to dashboard if already subscribed
   useEffect(() => {
-    if (isSubscribed) {
+    if (!isLoading && hasActiveSubscription) {
+      console.log('User already subscribed, redirecting to /admin from useEffect.');
       router.push('/admin')
     }
-  }, [isSubscribed, router])
+  }, [isLoading, hasActiveSubscription, router])
 
   const loadOfferings = async () => {
     try {
@@ -89,37 +90,45 @@ export default function SubscribePage() {
     )
   }
 
-  const hasActiveSubscription = customerInfo && Object.keys(customerInfo.entitlements.active).length > 0
+  if (isLoading) {
+    return (
+      <div className="container py-12">
+        <p>Checking subscription status...</p>
+      </div>
+    )
+  }
 
-  if (hasActiveSubscription) {
-    // Redirect to admin instead of showing subscription active message
-    router.push('/admin')
-    return null
+  if (!hasActiveSubscription) {
+    return (
+      <div className="p-4">
+        <h1 className="text-2xl font-bold mb-4">Subscribe</h1>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {offerings.map((pkg) => {
+            const product = pkg.webBillingProduct
+            return (
+              <div key={pkg.identifier} className="border rounded-lg p-4">
+                <h2 className="text-xl font-semibold mb-2">{product.displayName}</h2>
+                <p className="mb-4">{product.description}</p>
+                <p className="text-lg font-bold mb-4">
+                  {product.currentPrice.formattedPrice}
+                </p>
+                <button
+                  onClick={() => handlePurchase(pkg)}
+                  className="w-full bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 transition-colors"
+                >
+                  Subscribe Pay Off
+                </button>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    )
   }
 
   return (
-    <div className="p-4">
-      <h1 className="text-2xl font-bold mb-4">Subscribe</h1>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {offerings.map((pkg) => {
-          const product = pkg.webBillingProduct
-          return (
-            <div key={pkg.identifier} className="border rounded-lg p-4">
-              <h2 className="text-xl font-semibold mb-2">{product.displayName}</h2>
-              <p className="mb-4">{product.description}</p>
-              <p className="text-lg font-bold mb-4">
-                {product.currentPrice.formattedPrice}
-              </p>
-              <button
-                onClick={() => handlePurchase(pkg)}
-                className="w-full bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 transition-colors"
-              >
-                Subscribe
-              </button>
-            </div>
-          )
-        })}
-      </div>
+    <div className="container py-12">
+      <p>Redirecting...</p>
     </div>
   )
 }
