@@ -126,9 +126,9 @@ export default function SubscribePage() {
     return (
       <div className="container py-16 sm:py-24">
         <div className="mx-auto max-w-2xl text-center mb-12 sm:mb-16">
-            <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl">Membership Plans</h1>
+            <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl">30% off your booking</h1>
             <p className="mt-4 text-lg leading-8 text-muted-foreground">
-              Choose the plan that best suits your needs.
+              simple unique accomodation
             </p>
         </div>
 
@@ -148,9 +148,9 @@ export default function SubscribePage() {
                   </p>
                   <ul role="list" className="mt-8 space-y-3 text-sm leading-6 text-muted-foreground xl:mt-10">
                     {/* Add your feature list items here */}  
-                    <li className="flex gap-x-3">Feature 1</li>
-                    <li className="flex gap-x-3">Feature 2</li>
-                    <li className="flex gap-x-3">Feature 3</li>
+                    <li className="flex gap-x-3">Calendar booking request</li>
+                    <li className="flex gap-x-3">Mates rates for memebers</li>
+                    <li className="flex gap-x-3">Yearly free stay</li>
                   </ul>
                   <button
                     onClick={() => handlePurchase(monthly_subscription_plan)}
@@ -178,10 +178,10 @@ export default function SubscribePage() {
                   </p>
                    <ul role="list" className="mt-8 space-y-3 text-sm leading-6 text-muted-foreground xl:mt-10">
                     {/* Add your feature list items here */}  
-                    <li className="flex gap-x-3">Feature 1</li>
-                    <li className="flex gap-x-3">Feature 2</li>
-                    <li className="flex gap-x-3">Feature 3</li>
-                    <li className="flex gap-x-3">+ Annual Bonus Feature</li> 
+                    <li className="flex gap-x-3">Calendar booking request</li>
+                    <li className="flex gap-x-3">Mates rates for memebers</li>
+                    <li className="flex gap-x-3">Free stay</li>
+                    <li className="flex gap-x-3">+ Immediatly reserve your stay</li> 
                   </ul>
                   <button
                     onClick={() => handlePurchase(annual_subscription_plan)}
@@ -203,7 +203,7 @@ export default function SubscribePage() {
                   <div>
                     {/* Placeholder Image */}  
                     <img 
-                      src="https://img.freepik.com/free-vector/3d-metal-star-isolated_1308-117760.jpg?semt=ais_hybrid&w=740" 
+                      src="/api/media/679e003fcba48ad2a9224890?depth=2&draft=false&locale=undefined" 
                       alt="Professional Plan illustration" 
                       className="w-full h-auto rounded-lg shadow-md mb-4 md:mb-0"
                     />
@@ -218,10 +218,10 @@ export default function SubscribePage() {
                     </p>
                     <ul role="list" className="mt-8 space-y-3 text-sm leading-6 text-muted-foreground xl:mt-10">
                       {/* Add your feature list items here */}  
-                      <li className="flex gap-x-3">All Standard Features</li>
-                      <li className="flex gap-x-3">Pro Feature A</li>
-                      <li className="flex gap-x-3">Pro Feature B</li>
-                      <li className="flex gap-x-3">Priority Support</li>
+                      <li className="flex gap-x-3">Calendar booking request</li>
+                      <li className="flex gap-x-3">Legally binding comunication with customers</li>
+                      <li className="flex gap-x-3">Insight report</li>
+                      <li className="flex gap-x-3">Host your plek</li>
                     </ul>
                     <button
                       onClick={() => handlePurchase(professional_plan)}
