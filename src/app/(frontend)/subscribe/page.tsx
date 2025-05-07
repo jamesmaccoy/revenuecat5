@@ -62,31 +62,21 @@ export default function SubscribePage() {
     } catch (purchaseError) {
       const rcError = purchaseError as PurchasesError
       console.error('RevenueCat Purchase Error (Full Object):', rcError)
+      console.error('RevenueCat Purchase Error Name:', rcError.name)
+      console.error('RevenueCat Purchase Error Message:', rcError.message)
 
-      const errorCode = (rcError as any).code || 
-                        (rcError.userInfo as any)?.code || 
-                        ((rcError.userInfo as any)?.underlyingErrorMessage as any)?.code
+      let isCancelled = false
+      try {
+        if ((rcError as any).code === ErrorCode.UserCancelledError) {
+          isCancelled = true
+        }
+      } catch (e) { /* Silently ignore if .code access fails */ }
 
-      if (errorCode === ErrorCode.UserCancelledError) {
+      if (isCancelled) {
         console.log('User cancelled the purchase flow.')
         return
       }
       
-      if (errorCode === ErrorCode.PaymentPendingError) {
-        setError('Payment is pending. Please check your email or payment provider.')
-        return
-      }
-      if (errorCode === ErrorCode.ReceiptAlreadyInUseError) {
-        console.warn('Receipt already in use, attempting to redirect to admin as they might be subscribed.')
-        router.push('/admin')
-        return
-      }
-      if (errorCode === ErrorCode.OperationAlreadyInProgressError) {
-        console.warn('Purchase operation already in progress.')
-        setError('A purchase operation is already in progress. Please wait.')
-        return
-      }
-
       setError('Failed to complete purchase. Please try again or contact support.')
     }
   }
@@ -133,9 +123,9 @@ export default function SubscribePage() {
         </div>
       )}
       <div className="mx-auto max-w-2xl text-center mb-12 sm:mb-16">
-        <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl">30% off your booking</h1>
+        <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl">Become a member</h1>
         <p className="mt-4 text-lg leading-8 text-muted-foreground">
-          simple unique accomodation
+          Split your payments into smaller amounts
         </p>
       </div>
 
@@ -153,13 +143,13 @@ export default function SubscribePage() {
               <ul role="list" className="mt-8 space-y-3 text-sm leading-6 text-muted-foreground xl:mt-10">
                 <li className="flex gap-x-3">Calendar booking request</li>
                 <li className="flex gap-x-3">Mates rates for memebers</li>
-                <li className="flex gap-x-3">Yearly free stay</li>
+                <li className="flex gap-x-3">Flexi payment / pay later</li>
               </ul>
               <button
                 onClick={() => handlePurchase(monthly_subscription_plan)}
                 className="mt-8 block w-full rounded-md bg-secondary px-3.5 py-2.5 text-center text-sm font-semibold text-secondary-foreground shadow-sm hover:bg-secondary/80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
               >
-                Choose Monthly
+                Pay it off monthly
               </button>
             </div>
           )
@@ -181,14 +171,14 @@ export default function SubscribePage() {
               <ul role="list" className="mt-8 space-y-3 text-sm leading-6 text-muted-foreground xl:mt-10">
                 <li className="flex gap-x-3">Calendar booking request</li>
                 <li className="flex gap-x-3">Mates rates for memebers</li>
-                <li className="flex gap-x-3">Free stay</li>
-                <li className="flex gap-x-3">+ Immediatly reserve your stay</li>
+                <li className="flex gap-x-3">Flexi payment / pay later</li>
+                <li className="flex gap-x-3">1 X Free stay</li>
               </ul>
               <button
                 onClick={() => handlePurchase(annual_subscription_plan)}
                 className="mt-8 block w-full rounded-md bg-primary px-3.5 py-2.5 text-center text-sm font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
               >
-                Choose Annual
+                Book Now
               </button>
             </div>
           )
@@ -196,18 +186,16 @@ export default function SubscribePage() {
       </div>
 
       {professional_plan && (() => {
-        const product = professional_plan.webBillingProduct
+        const product = professional_plan.webBillingProduct;
         return (
-          <div className="mt-16 pt-8 border-t border-border">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-              <div>
-                <img 
-                  src="https://llandudnoshack.co.za/images/Gallery-shack.jpg" 
-                  alt="Professional Plan illustration" 
-                  className="w-full h-auto rounded-lg shadow-md mb-4 md:mb-0"
-                />
-              </div>
-              <div className="rounded-2xl border border-border p-8 shadow-sm">
+          <div 
+            className="mt-16 pt-16 pb-16 border-t border-border bg-cover bg-center relative rounded-lg shadow-md"
+            style={{ backgroundImage: `url('https://llandudnoshack.co.za/images/Gallery-shack.jpg')` }}
+          >
+            <div className="absolute inset-0 bg-black/30 rounded-lg"></div> 
+
+            <div className="relative max-w-md mx-auto">
+              <div className="rounded-2xl border border-border bg-card p-8 shadow-lg">
                 <h2 className="text-lg font-semibold leading-8 text-foreground">{product.displayName}</h2>
                 <p className="mt-2 text-sm leading-6 text-muted-foreground">{product.description || 'Advanced features for professionals.'}</p>
                 <p className="mt-6 flex items-baseline gap-x-1">
@@ -224,12 +212,12 @@ export default function SubscribePage() {
                   onClick={() => handlePurchase(professional_plan)}
                   className="mt-8 block w-full rounded-md bg-secondary px-3.5 py-2.5 text-center text-sm font-semibold text-secondary-foreground shadow-sm hover:bg-secondary/80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
                 >
-                  Choose Professional
+                  Host your plek
                 </button>
               </div>
             </div>
           </div>
-        )
+        );
       })()}
     </div>
   )
