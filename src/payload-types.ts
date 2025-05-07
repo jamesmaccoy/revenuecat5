@@ -339,6 +339,7 @@ export interface Category {
  */
 export interface Page {
   id: string;
+  author: string | User;
   title: string;
   hero: {
     type: 'none' | 'highImpact' | 'mediumImpact' | 'lowImpact';
@@ -939,6 +940,7 @@ export interface BookingsSelect<T extends boolean = true> {
  * via the `definition` "pages_select".
  */
 export interface PagesSelect<T extends boolean = true> {
+  author?: T;
   title?: T;
   hero?:
     | T

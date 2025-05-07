@@ -19,14 +19,51 @@ import {
   PreviewField,
 } from '@payloadcms/plugin-seo/fields'
 import { isAdmin } from '@/access/isAdmin'
+import { adminOrSelfField } from '@/access/adminOrSelfField'
+import { User } from '@/payload-types'
 
 export const Pages: CollectionConfig<'pages'> = {
   slug: 'pages',
   access: {
-    create: isAdmin,
-    delete: isAdmin,
-    read: isAdmin,
-    update: isAdmin,
+    create: ({ req: { user } }) => {
+      if (!user) return false; // Must be logged in
+      const roles = user.role || [];
+      // Allow 'admin' or 'customer' roles to create
+      return roles.includes('admin') || roles.includes('customer');
+    },
+
+    read: ({ req: { user } }) => {
+      if (!user) return false; // Not logged in
+      if (user.role?.includes('admin')) return true; // Admins see all
+      // Customers can read where the 'author' field equals their own ID
+      if (user.role?.includes('customer')) {
+          // Assumes your author field is named 'author'
+          return { author: { equals: user.id } };
+      }
+      return false; // Deny others
+    },
+
+    update: ({ req: { user } }) => {
+      if (!user) return false;
+      if (user.role?.includes('admin')) return true;
+      // Customers can update where the 'author' field equals their own ID
+      if (user.role?.includes('customer')) {
+          // Assumes your author field is named 'author'
+          return { author: { equals: user.id } };
+      }
+      return false; // Deny others
+    },
+
+    delete: ({ req: { user } }) => {
+      if (!user) return false;
+      if (user.role?.includes('admin')) return true;
+      // Customers can delete where the 'author' field equals their own ID
+      if (user.role?.includes('customer')) {
+          // Assumes your author field is named 'author'
+          return { author: { equals: user.id } };
+      }
+      return false; // Deny others
+    },
   },
   // This config controls what's populated by default when a page is referenced
   // https://payloadcms.com/docs/queries/select#defaultpopulate-collection-config-property
@@ -57,6 +94,20 @@ export const Pages: CollectionConfig<'pages'> = {
     useAsTitle: 'title',
   },
   fields: [
+    {
+      name: 'author',
+      type: 'relationship',
+      relationTo: 'users',
+      required: true,
+      defaultValue: ({ user }: { user: User }) => user?.id,
+      admin: {
+        readOnly: true,
+        position: 'sidebar',
+      },
+      access: {
+        update: () => false,
+      },
+    },
     {
       name: 'title',
       type: 'text',

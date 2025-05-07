@@ -3,7 +3,7 @@ import { adminOrSelfField } from '@/access/adminOrSelfField'
 import { isAdmin } from '@/access/isAdmin'
 import { isAdminField } from '@/access/isAdminField'
 import { slugField } from '@/fields/slug'
-import { CollectionConfig } from 'payload'
+import type { CollectionConfig } from 'payload'
 import { adminOrSelfOrGuests } from './access/adminOrSelfOrGuests'
 
 export const Booking: CollectionConfig = {
@@ -16,13 +16,39 @@ export const Booking: CollectionConfig = {
     interface: 'Booking',
   },
   admin: {
-    useAsTitle: 'title',
-    defaultColumns: ['title', 'fromDate', 'toDate', 'slug', 'customer'],
+    useAsTitle: 'id',
+    defaultColumns: ['customer', 'post', 'fromDate', 'toDate', 'guests'],
   },
   access: {
-    read: adminOrSelfOrGuests('customer', 'guests'),
-    create: isAdmin,
-    delete: isAdmin,
+    create: ({ req: { user } }) => {
+      if (!user) return false;
+      const roles = user.role || [];
+      return roles.includes('admin') || roles.includes('customer');
+    },
+    read: ({ req: { user } }) => {
+      if (!user) return false;
+      if (user.role?.includes('admin')) return true;
+      if (user.role?.includes('customer')) {
+        return { customer: { equals: user.id } };
+      }
+      return false;
+    },
+    update: ({ req: { user } }) => {
+      if (!user) return false;
+      if (user.role?.includes('admin')) return true;
+      if (user.role?.includes('customer')) {
+        return { customer: { equals: user.id } };
+      }
+      return false;
+    },
+    delete: ({ req: { user } }) => {
+      if (!user) return false;
+      if (user.role?.includes('admin')) return true;
+      if (user.role?.includes('customer')) {
+        return { customer: { equals: user.id } };
+      }
+      return false;
+    },
   },
   fields: [
     {
