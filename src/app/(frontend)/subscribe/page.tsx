@@ -171,14 +171,14 @@ export default function SubscribePage() {
               <ul role="list" className="mt-8 space-y-3 text-sm leading-6 text-muted-foreground xl:mt-10">
                 <li className="flex gap-x-3">Calendar booking request</li>
                 <li className="flex gap-x-3">Mates rates for memebers</li>
-                <li className="flex gap-x-3">Flexi payment / pay later</li>
-                <li className="flex gap-x-3">1 X Free stay</li>
+                <li className="flex gap-x-3">2 X Free nights</li>
+                <li className="flex gap-x-3"></li>
               </ul>
               <button
                 onClick={() => handlePurchase(annual_subscription_plan)}
                 className="mt-8 block w-full rounded-md bg-primary px-3.5 py-2.5 text-center text-sm font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
               >
-                Book Now
+                Book Now - Save
               </button>
             </div>
           )
@@ -189,31 +189,38 @@ export default function SubscribePage() {
         const product = professional_plan.webBillingProduct;
         return (
           <div 
-            className="mt-16 pt-16 pb-16 border-t border-border bg-cover bg-center relative rounded-lg shadow-md"
+            className="mt-16 pt-16 pb-16 md:border-t border-border bg-cover bg-center relative rounded-lg shadow-md"
             style={{ backgroundImage: `url('https://llandudnoshack.co.za/images/Gallery-shack.jpg')` }}
           >
             <div className="absolute inset-0 bg-black/30 rounded-lg"></div> 
 
-            <div className="relative max-w-md mx-auto">
-              <div className="rounded-2xl border border-border bg-card p-8 shadow-lg">
-                <h2 className="text-lg font-semibold leading-8 text-foreground">{product.displayName}</h2>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground">{product.description || 'Advanced features for professionals.'}</p>
-                <p className="mt-6 flex items-baseline gap-x-1">
-                  <span className="text-4xl font-bold tracking-tight text-foreground">{product.currentPrice.formattedPrice}</span>
-                  <span className="text-sm font-semibold leading-6 text-muted-foreground">/term</span>
-                </p>
-                <ul role="list" className="mt-8 space-y-3 text-sm leading-6 text-muted-foreground xl:mt-10">
-                  <li className="flex gap-x-3">Calendar booking request</li>
-                  <li className="flex gap-x-3">Legally binding comunication with customers</li>
-                  <li className="flex gap-x-3">Insight report</li>
-                  <li className="flex gap-x-3">Host your plek</li>
-                </ul>
-                <button
-                  onClick={() => handlePurchase(professional_plan)}
-                  className="mt-8 block w-full rounded-md bg-secondary px-3.5 py-2.5 text-center text-sm font-semibold text-secondary-foreground shadow-sm hover:bg-secondary/80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
-                >
-                  Host your plek
-                </button>
+            <div className="relative max-w-4xl mx-auto px-4 flex flex-col lg:flex-row items-center justify-center gap-8 lg:gap-12"> 
+              
+              <div className="text-center lg:text-left text-white">
+                 <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">Host a plek</h2>
+              </div>
+
+              <div className="w-full max-w-md">
+                <div className="rounded-2xl border border-border bg-card p-8 shadow-lg">
+                  <h3 className="text-lg font-semibold leading-8 text-foreground">{product.displayName}</h3>
+                  <p className="mt-2 text-sm leading-6 text-muted-foreground">{product.description || 'Advanced features for professionals.'}</p>
+                  <p className="mt-6 flex items-baseline gap-x-1">
+                    <span className="text-4xl font-bold tracking-tight text-foreground">{product.currentPrice.formattedPrice}</span>
+                    <span className="text-sm font-semibold leading-6 text-muted-foreground">/term</span>
+                  </p>
+                  <ul role="list" className="mt-8 space-y-3 text-sm leading-6 text-muted-foreground xl:mt-10">
+                    <li className="flex gap-x-3">Calendar booking request</li>
+                    <li className="flex gap-x-3">Legally binding comunication with customers</li>
+                    <li className="flex gap-x-3">Insight report</li>
+                    <li className="flex gap-x-3">Host your plek</li>
+                  </ul>
+                  <button
+                    onClick={() => handlePurchase(professional_plan)}
+                    className="mt-8 block w-full rounded-md bg-secondary px-3.5 py-2.5 text-center text-sm font-semibold text-secondary-foreground shadow-sm hover:bg-secondary/80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+                  >
+                    Host your plek
+                  </button>
+                </div>
               </div>
             </div>
           </div>
