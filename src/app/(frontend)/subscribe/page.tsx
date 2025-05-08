@@ -83,7 +83,7 @@ export default function SubscribePage() {
 
   const monthly_subscription_plan = offerings.find(pkg => pkg.webBillingProduct?.identifier === 'monthly_subscription')
   const annual_subscription_plan = offerings.find(pkg => pkg.webBillingProduct?.identifier === 'annual_subscription')
-  const professional_plan = offerings.find(pkg => pkg.webBillingProduct?.identifier === 'subscription_pro')
+  const professional_plan = offerings.find(pkg => pkg.webBillingProduct?.identifier === 'producer')
   
   console.log("Monthly Plan Found:", monthly_subscription_plan)
   console.log("Annual Plan Found:", annual_subscription_plan)
@@ -123,9 +123,9 @@ export default function SubscribePage() {
         </div>
       )}
       <div className="mx-auto max-w-2xl text-center mb-12 sm:mb-16">
-        <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl">Stay at one of our self built cabins.</h1>
+        <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl">Measure and report on your digital product</h1>
         <p className="mt-4 text-lg leading-8 text-muted-foreground">
-          Split your payments into smaller amounts
+          Your strategy on a database
         </p>
       </div>
 
@@ -142,14 +142,14 @@ export default function SubscribePage() {
               </p>
               <ul role="list" className="mt-8 space-y-3 text-sm leading-6 text-muted-foreground xl:mt-10">
                 <li className="flex gap-x-3">Calendar booking request</li>
-                <li className="flex gap-x-3">Curated unique cottages</li>
+                <li className="flex gap-x-3">Curated novel producers</li>
                 <li className="flex gap-x-3">Invite guests</li>
               </ul>
               <button
                 onClick={() => handlePurchase(monthly_subscription_plan)}
                 className="mt-8 block w-full rounded-md bg-secondary px-3.5 py-2.5 text-center text-sm font-semibold text-secondary-foreground shadow-sm hover:bg-secondary/80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
               >
-                Pay it off monthly
+                Start Product
               </button>
             </div>
           )
@@ -170,9 +170,9 @@ export default function SubscribePage() {
               </p>
               <ul role="list" className="mt-8 space-y-3 text-sm leading-6 text-muted-foreground xl:mt-10">
                 <li className="flex gap-x-3">Calendar booking request</li>
-                <li className="flex gap-x-3">Curated unique cottages</li>
+                <li className="flex gap-x-3">Curated novel producers</li>
                 <li className="flex gap-x-3">Invite guests</li>
-                <li className="flex gap-x-3">2 X Free nights</li>
+                <li className="flex gap-x-3">2 X Free days</li>
               </ul>
               <button
                 onClick={() => handlePurchase(annual_subscription_plan)}
@@ -197,7 +197,7 @@ export default function SubscribePage() {
             <div className="relative max-w-4xl mx-auto px-4 flex flex-col lg:flex-row items-center justify-center gap-8 lg:gap-12"> 
               
               <div className="text-center lg:text-left text-white">
-                 <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">Host a plek</h2>
+                 <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">We pay you to quit your job</h2>
               </div>
 
               <div className="w-full max-w-md">
@@ -211,14 +211,14 @@ export default function SubscribePage() {
                   <ul role="list" className="mt-8 space-y-3 text-sm leading-6 text-muted-foreground xl:mt-10">
                     <li className="flex gap-x-3">Insight report</li>
                     <li className="flex gap-x-3">Calendar booking request</li>
-                    <li className="flex gap-x-3">Short term lease agreement</li>
+                    <li className="flex gap-x-3">Short term agreement</li>
                     <li className="flex gap-x-3">Privacy from guests</li>
                   </ul>
                   <button
                     onClick={() => handlePurchase(professional_plan)}
                     className="mt-8 block w-full rounded-md bg-secondary px-3.5 py-2.5 text-center text-sm font-semibold text-secondary-foreground shadow-sm hover:bg-secondary/80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
                   >
-                    Host a plek
+                    Become a producer
                   </button>
                 </div>
               </div>
