@@ -67,7 +67,7 @@ export default async function Bookings() {
           <>
             <div>
               {upcomingBookings.docs.length > 0 && (
-                <h2 className="text-4xl font-medium tracking-tighter my-6">Upcoming stays</h2>
+                <h2 className="text-4xl font-medium tracking-tighter my-6">Upcoming bookings</h2>
               )}
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
@@ -78,7 +78,7 @@ export default async function Bookings() {
             </div>
 
             {pastBookings.docs.length > 0 && (
-              <h2 className="text-4xl font-medium tracking-tighter my-6">Past stays</h2>
+              <h2 className="text-4xl font-medium tracking-tighter my-6">Past bookings</h2>
             )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
