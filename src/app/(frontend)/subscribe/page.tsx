@@ -124,7 +124,11 @@ export default function SubscribePage() {
       )}
       <div className="mx-auto max-w-2xl text-center mb-12 sm:mb-16">
 <<<<<<< HEAD
+<<<<<<< HEAD
         <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl">Measure and report on your digital product</h1>
+=======
+        <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl">Become a member</h1>
+>>>>>>> parent of 3112aa9 (Update page.tsx)
 =======
         <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl">Become a member</h1>
 >>>>>>> parent of 3112aa9 (Update page.tsx)
@@ -147,8 +151,13 @@ export default function SubscribePage() {
               <ul role="list" className="mt-8 space-y-3 text-sm leading-6 text-muted-foreground xl:mt-10">
                 <li className="flex gap-x-3">Calendar booking request</li>
 <<<<<<< HEAD
+<<<<<<< HEAD
                 <li className="flex gap-x-3">Curated novel producers</li>
                 <li className="flex gap-x-3">Invite guests</li>
+=======
+                <li className="flex gap-x-3">Mates rates for memebers</li>
+                <li className="flex gap-x-3">Flexi payment / pay later</li>
+>>>>>>> parent of 3112aa9 (Update page.tsx)
 =======
                 <li className="flex gap-x-3">Mates rates for memebers</li>
                 <li className="flex gap-x-3">Flexi payment / pay later</li>
@@ -180,9 +189,15 @@ export default function SubscribePage() {
               <ul role="list" className="mt-8 space-y-3 text-sm leading-6 text-muted-foreground xl:mt-10">
                 <li className="flex gap-x-3">Calendar booking request</li>
 <<<<<<< HEAD
+<<<<<<< HEAD
                 <li className="flex gap-x-3">Curated novel producers</li>
                 <li className="flex gap-x-3">Invite guests</li>
                 <li className="flex gap-x-3">2 X Free days</li>
+=======
+                <li className="flex gap-x-3">Mates rates for memebers</li>
+                <li className="flex gap-x-3">2 X Free nights</li>
+                <li className="flex gap-x-3"></li>
+>>>>>>> parent of 3112aa9 (Update page.tsx)
 =======
                 <li className="flex gap-x-3">Mates rates for memebers</li>
                 <li className="flex gap-x-3">2 X Free nights</li>
@@ -226,8 +241,14 @@ export default function SubscribePage() {
                   <ul role="list" className="mt-8 space-y-3 text-sm leading-6 text-muted-foreground xl:mt-10">
                     <li className="flex gap-x-3">Calendar booking request</li>
 <<<<<<< HEAD
+<<<<<<< HEAD
                     <li className="flex gap-x-3">Short term agreement</li>
                     <li className="flex gap-x-3">Privacy from guests</li>
+=======
+                    <li className="flex gap-x-3">Legally binding comunication with customers</li>
+                    <li className="flex gap-x-3">Insight report</li>
+                    <li className="flex gap-x-3">Host your plek</li>
+>>>>>>> parent of 3112aa9 (Update page.tsx)
 =======
                     <li className="flex gap-x-3">Legally binding comunication with customers</li>
                     <li className="flex gap-x-3">Insight report</li>
@@ -239,7 +260,11 @@ export default function SubscribePage() {
                     className="mt-8 block w-full rounded-md bg-secondary px-3.5 py-2.5 text-center text-sm font-semibold text-secondary-foreground shadow-sm hover:bg-secondary/80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
                   >
 <<<<<<< HEAD
+<<<<<<< HEAD
                     Become a producer
+=======
+                    Host your plek
+>>>>>>> parent of 3112aa9 (Update page.tsx)
 =======
                     Host your plek
 >>>>>>> parent of 3112aa9 (Update page.tsx)
