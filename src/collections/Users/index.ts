@@ -1,5 +1,4 @@
 import type { CollectionConfig } from 'payload'
-import type { User } from '@/payload-types';
 
 import { adminOrCreateRoleCustomer } from './access/adminOrCreateRoleCustomer'
 import { isAdmin } from '@/access/isAdmin'
@@ -28,7 +27,7 @@ export const Users: CollectionConfig = {
   },
 
   hooks: {
-    beforeValidate: [fillAddedByField, validateRole],
+    beforeValidate: [fillAddedByField],
   },
   auth: true,
   fields: [
@@ -39,15 +38,11 @@ export const Users: CollectionConfig = {
     {
       name: 'role',
       type: 'select',
-      // Revert to static options to prevent frontend runtime error
-      // This means the Admin UI will show all options to all users,
-      // but the validateRole hook will enforce actual permissions.
       options: [
         { label: 'Admin', value: 'admin' },
         { label: 'Customer', value: 'customer' },
         { label: 'Guest', value: 'guest' },
       ],
-      // Removed the dynamic function and 'as any' to ensure options is an array
       hasMany: true,
       defaultValue: ['guest'],
     },
