@@ -105,14 +105,12 @@ export async function middleware(request: NextRequest) {
       const checkResponse = await fetch(checkUrl, {
         headers: { cookie: request.headers.get('cookie') || '' },
       })
-       if (!checkResponse.ok) {
-        console.error(`API call to /api/check-subscription failed with status ${checkResponse.status}`)
+      if (!checkResponse.ok) {
         return NextResponse.redirect(new URL('/subscribe', request.url)) 
       }
       const { hasActiveSubscription, customerId } = await checkResponse.json()
 
       if (!hasActiveSubscription) {
-        console.log('No active subscription for protected path, redirecting to /subscribe')
         return NextResponse.redirect(new URL('/subscribe', request.url))
       }
       const response = NextResponse.next()

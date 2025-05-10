@@ -57,9 +57,7 @@ export const useSubscription = (entitlementId?: string): SubscriptionStatus => {
         // DETAILED LOGGING START
         console.log('useSubscription - API Response Status:', response.status);
         console.log('useSubscription - API Response OK:', response.ok);
-        // Try to peek at the response text without consuming response.json() yet,
-        // but be careful as response body can only be consumed once.
-        // This is safer if done only when !response.ok is true.
+        
         if (!response.ok) {
             try {
                 const errorText = await response.text();
@@ -69,7 +67,6 @@ export const useSubscription = (entitlementId?: string): SubscriptionStatus => {
             }
             throw new Error('Failed to check subscription status');
         }
-        // DETAILED LOGGING END
 
         const { hasActiveSubscription, activeEntitlements, customerId } = await response.json()
 
@@ -80,11 +77,6 @@ export const useSubscription = (entitlementId?: string): SubscriptionStatus => {
           isLoading: false,
           error: null,
         });
-
-        // Optionally, if customerId is returned by API and you want to use it from RevenueCatProvider context:
-        // if (customerId && setRevenueCatCustomerId) { // Assuming setRevenueCatCustomerId is available from context
-        //   setRevenueCatCustomerId(customerId);
-        // }
 
       } catch (err) {
         console.error('useSubscription - Error in checkSubscription:', err);
@@ -98,10 +90,9 @@ export const useSubscription = (entitlementId?: string): SubscriptionStatus => {
       }
     };
 
-    if (isRevenueCatLoading) {
-      checkSubscription();
-    }
-  }, [customerInfo, isRevenueCatLoading, entitlementId]);
+    // Always check subscription when the component mounts or when dependencies change
+    checkSubscription();
+  }, [customerInfo, entitlementId]);
 
   return subscriptionStatus;
 } 
