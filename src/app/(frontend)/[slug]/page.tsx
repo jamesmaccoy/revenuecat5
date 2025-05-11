@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { PayloadRedirects } from '@/components/PayloadRedirects'
-import configPromise from '@payload-config'
+import config from '@/payload.config'
 import { getPayload } from 'payload'
 import { draftMode } from 'next/headers'
 import React, { cache } from 'react'
@@ -17,8 +17,16 @@ import { generateMeta } from '@/utilities/generateMeta'
 import PageClient from './page.client'
 import { LivePreviewListener } from '@/components/LivePreviewListener'
 
+type Args = {
+  params: {
+    slug: string
+  }
+}
+
 export async function generateStaticParams() {
-  const payload = await getPayload({ config: configPromise })
+  const payload = await getPayload({ config })
+  
+  // Get pages
   const pages = await payload.find({
     collection: 'pages',
     draft: false,
@@ -29,26 +37,37 @@ export async function generateStaticParams() {
     },
   })
 
-  const params = pages.docs
-    ?.filter((doc) => {
-      return doc.slug !== 'home'
+  // Get posts
+  const posts = await payload.find({
+    collection: 'posts',
+    draft: false,
+    limit: 1000,
+    pagination: false,
+    select: {
+      slug: true,
+    },
+  })
+
+  // Ensure we have valid slugs
+  const params = [
+    ...(pages.docs || []),
+    ...(posts.docs || []),
+  ]
+    .filter((doc) => {
+      return doc.slug && doc.slug !== 'home'
     })
     .map(({ slug }) => {
+      if (!slug) return null
       return { slug }
     })
+    .filter((param): param is { slug: string } => param !== null)
 
   return params
 }
 
-type Args = {
-  params: Promise<{
-    slug?: string
-  }>
-}
-
-export default async function Page({ params: paramsPromise }: Args) {
+export default async function Page({ params }: Args) {
   const { isEnabled: draft } = await draftMode()
-  const { slug = 'home' } = await paramsPromise
+  const { slug = 'home' } = params
   const url = '/' + (slug === 'home' ? '' : slug)
 
   const redirects = await getCachedRedirects()()
@@ -79,39 +98,71 @@ export default async function Page({ params: paramsPromise }: Args) {
     console.warn(`Redirect found for ${url} but has invalid target.`);
   }
 
-  let page: PageType | null
-
-  page = await queryPageBySlug({
+  // First try to find a page
+  const page = await queryPageBySlug({
     slug,
   })
 
   if (!page && slug === 'home') {
-    page = homeStatic
+    return <PageClient page={homeStatic} draft={draft} url={url} />
   }
 
   if (!page) {
-    return <PageClient page={page} draft={draft} url={url} />
+    // If no page found, try to find a post
+    const post = await queryPostBySlug({
+      slug,
+    })
+
+    if (post) {
+      // If it's a post, redirect to the posts route
+      redirect(`/posts/${slug}`)
+    }
+
+    return <PageClient page={null} draft={draft} url={url} />
   }
 
   return <PageClient page={page} draft={draft} url={url} />
 }
 
-export async function generateMetadata({ params: paramsPromise }): Promise<Metadata> {
-  const { slug = 'home' } = await paramsPromise
+export async function generateMetadata({ params }: Args): Promise<Metadata> {
+  const { slug = 'home' } = params
   const page = await queryPageBySlug({
     slug,
   })
 
+  if (!page) {
+    return {}
+  }
+
   return generateMeta({ doc: page })
 }
 
-const queryPageBySlug = cache(async ({ slug }: { slug: string }) => {
+const queryPageBySlug = cache(async ({ slug }: { slug: string }): Promise<PageType | null> => {
   const { isEnabled: draft } = await draftMode()
-
-  const payload = await getPayload({ config: configPromise })
+  const payload = await getPayload({ config })
 
   const result = await payload.find({
     collection: 'pages',
+    draft,
+    depth: 2,
+    limit: 1,
+    pagination: false,
+    where: {
+      slug: {
+        equals: slug,
+      },
+    },
+  })
+
+  return result.docs?.[0] || null
+})
+
+const queryPostBySlug = cache(async ({ slug }: { slug: string }): Promise<Post | null> => {
+  const { isEnabled: draft } = await draftMode()
+  const payload = await getPayload({ config })
+
+  const result = await payload.find({
+    collection: 'posts',
     draft,
     depth: 2,
     limit: 1,

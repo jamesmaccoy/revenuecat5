@@ -11,6 +11,7 @@ import { RenderBlocks } from '@/blocks/RenderBlocks'
 import { LivePreviewListener } from '@/components/LivePreviewListener'
 import { PayloadRedirects } from '@/components/PayloadRedirects'
 
+
 interface PageClientProps {
   page: PageType | null
   draft: boolean
@@ -97,6 +98,7 @@ const PageClient: React.FC<PageClientProps> = ({ page, draft, url }) => {
 
         <RenderHero {...hero} />
         <RenderBlocks blocks={layout} />
+       
       </article>
     )
   }
