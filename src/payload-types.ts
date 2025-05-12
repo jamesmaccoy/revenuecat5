@@ -143,6 +143,7 @@ export interface Booking {
   id: string;
   title: string;
   customer?: (string | null) | User;
+  token: string;
   guests?: (string | User)[] | null;
   slug?: string | null;
   slugLock?: boolean | null;
@@ -924,6 +925,7 @@ export interface PayloadMigration {
 export interface BookingsSelect<T extends boolean = true> {
   title?: T;
   customer?: T;
+  token?: T;
   guests?: T;
   slug?: T;
   slugLock?: T;
