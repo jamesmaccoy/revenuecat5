@@ -49,6 +49,7 @@ export default async function BookingDetails({ params }: { params: Params }) {
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-2xl font-bold">Guests</h2>
           <InviteUrlDialog
+            bookingId={bookingId}
             trigger={
               <Button>
                 <PlusCircleIcon className="size-4 mr-2" />
