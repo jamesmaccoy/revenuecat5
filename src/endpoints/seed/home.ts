@@ -664,4 +664,5 @@ export const home: RequiredDataFromCollectionSlug<'pages'> = {
     title: 'Payload Website Template',
   },
   title: 'Home',
+  author: 'admin',
 }
