@@ -18,6 +18,7 @@ import { plugins } from './plugins'
 import { defaultLexical } from '@/fields/defaultLexical'
 import { getServerSideURL } from './utilities/getURL'
 import { Booking } from './collections/Bookings'
+import analyticsRouter from './routes/analytics'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -25,6 +26,7 @@ const dirname = path.dirname(filename)
 export default buildConfig({
   admin: {
     components: {
+      afterDashboard: ['@/components/AnalyticsDashboardData/AnalyticsDashboard'],
       // The `BeforeLogin` component renders a message that you see while logging into your admin panel.
       // Feel free to delete this at any time. Simply remove the line below and the import `BeforeLogin` statement on line 15.
       beforeLogin: ['@/components/BeforeLogin'],
@@ -85,6 +87,13 @@ export default buildConfig({
       },
     }),
     // storage-adapter-placeholder
+  ],
+  endpoints: [
+    {
+      method: 'get',
+      path: '/api/analytics', // the URL path you want for your custom API
+      handler: analyticsRouter, // attach your router here
+    },
   ],
   secret: process.env.PAYLOAD_SECRET,
   sharp,
