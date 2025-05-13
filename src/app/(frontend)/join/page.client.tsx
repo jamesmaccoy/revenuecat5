@@ -66,11 +66,19 @@ export default function JoinClient({ bookingTotal = 'N/A', bookingDuration = 'N/
     setLoadingOfferings(true)
     try {
       const fetchedOfferings = await Purchases.getSharedInstance().getOfferings()
-      console.log("Fetched Offerings Object:", fetchedOfferings)
-      if (fetchedOfferings.current && fetchedOfferings.current.availablePackages.length > 0) {
-        setOfferings(fetchedOfferings.current.availablePackages)
+      console.log("All Offerings:", fetchedOfferings.all)
+      
+      // Get the per_night offering specifically
+      const perNightOffering = fetchedOfferings.all["per_night"]
+      
+      if (perNightOffering && perNightOffering.availablePackages.length > 0) {
+        console.log("Per Night packages:", perNightOffering.availablePackages.map(pkg => ({
+          identifier: pkg.webBillingProduct?.identifier,
+          product: pkg.webBillingProduct
+        })))
+        setOfferings(perNightOffering.availablePackages)
       } else {
-        console.warn("No current offering or packages found.")
+        console.warn("No packages found in per_night offering")
         setOfferings([])
       }
     } catch (err) {
@@ -86,18 +94,28 @@ export default function JoinClient({ bookingTotal = 'N/A', bookingDuration = 'N/
     setPaymentError(null)
     
     try {
-      // Find the booking package - adjust the identifier to match your RevenueCat setup
-      // You might need to change this identifier based on your RevenueCat setup
-      const bookingPackage = offerings.find(pkg => 
-        pkg.webBillingProduct?.identifier === "booking_package" || 
-        pkg.webBillingProduct?.identifier === "monthly_subscription"
-      )
+      // Find the appropriate package based on RevenueCat configuration
+      const bookingPackage = offerings.find(pkg => {
+        const identifier = pkg.webBillingProduct?.identifier
+        console.log("Checking package:", identifier)
+        return identifier === "per_night_luxury" || identifier === "per_night"
+      })
       
       if (!bookingPackage) {
+        console.error("Available packages:", offerings.map(pkg => ({
+          identifier: pkg.webBillingProduct?.identifier,
+          product: pkg.webBillingProduct
+        })))
         throw new Error("Booking package not found. Please contact support.")
       }
+
+      // Log which package was found
+      console.log("Selected package:", {
+        identifier: bookingPackage.webBillingProduct?.identifier,
+        isLuxury: bookingPackage.webBillingProduct?.identifier === "per_night_luxury"
+      })
       
-      // Process the payment
+      // Process the purchase
       await Purchases.getSharedInstance().purchase({
         rcPackage: bookingPackage,
       })
@@ -107,12 +125,13 @@ export default function JoinClient({ bookingTotal = 'N/A', bookingDuration = 'N/
       const toDate = new Date()
       toDate.setDate(toDate.getDate() + parseInt(bookingDuration))
       
-      // After successful purchase, save booking to your backend
+      // After successful subscription purchase, save booking to your backend
       const bookingData = {
-        postId: postId, // This is required in your schema
+        postId: postId,
         fromDate: fromDate.toISOString(),
         toDate: toDate.toISOString(),
         duration: bookingDuration,
+        subscriptionType: bookingPackage.webBillingProduct?.identifier,
         // You can add selected guests here if you implement that feature
         // guestIds: selectedGuests.map(guest => guest.id),
       }
@@ -152,12 +171,12 @@ export default function JoinClient({ bookingTotal = 'N/A', bookingDuration = 'N/
       }
 
       if (isCancelled) {
-        console.log("User cancelled the booking flow.")
+        console.log("User cancelled the subscription flow.")
         setPaymentLoading(false)
         return
       }
 
-      setPaymentError("Failed to complete booking. Please try again or contact support.")
+      setPaymentError("Failed to complete subscription. Please try again or contact support.")
     } finally {
       setPaymentLoading(false)
     }
@@ -200,9 +219,9 @@ export default function JoinClient({ bookingTotal = 'N/A', bookingDuration = 'N/
       {/* Payment Success Message */}
       {paymentSuccess && (
         <div className="mb-6 p-4 border border-green-200 bg-green-50 rounded-md">
-          <h3 className="text-green-800 font-semibold">Booking Successful!</h3>
+          <h3 className="text-green-800 font-semibold">Subscription Successful!</h3>
           <p className="text-green-700">
-            Your booking has been confirmed. Redirecting to confirmation page...
+            Your subscription has been confirmed. Redirecting to confirmation page...
           </p>
         </div>
       )}
@@ -210,7 +229,7 @@ export default function JoinClient({ bookingTotal = 'N/A', bookingDuration = 'N/
       {/* Payment Error Message */}
       {paymentError && (
         <div className="mb-6 p-4 border border-red-200 bg-red-50 rounded-md">
-          <h3 className="text-red-800 font-semibold">Payment Error</h3>
+          <h3 className="text-red-800 font-semibold">Subscription Error</h3>
           <p className="text-red-700">
             {paymentError}
           </p>
@@ -219,7 +238,7 @@ export default function JoinClient({ bookingTotal = 'N/A', bookingDuration = 'N/
 
       {/* Booking Summary */}
       <div className="mb-8 bg-muted p-6 rounded-lg border border-border">
-        <h2 className="text-2xl font-semibold mb-4">Booking Summary</h2>
+        <h2 className="text-2xl font-semibold mb-4">Subscription Summary</h2>
         <div className="flex justify-between items-center mb-4">
           <span className="text-muted-foreground">Rate per night:</span>
           <span className="font-medium">R{bookingTotal}</span>
@@ -233,7 +252,7 @@ export default function JoinClient({ bookingTotal = 'N/A', bookingDuration = 'N/
           <span className="text-2xl font-bold">R{totalPrice !== null ? totalPrice : "N/A"}</span>
         </div>
 
-        {/* Complete Booking Button */}
+        {/* Complete Subscription Button */}
         <Button
           onClick={handleBooking}
           className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
@@ -242,14 +261,14 @@ export default function JoinClient({ bookingTotal = 'N/A', bookingDuration = 'N/
           {paymentLoading ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Processing Payment...
+              Processing Subscription...
             </>
           ) : paymentSuccess ? (
-            "Booking Confirmed!"
+            "Subscription Confirmed!"
           ) : !postId ? (
             "Missing Property Information"
           ) : (
-            `Complete Booking - R${totalPrice !== null ? totalPrice : "N/A"}`
+            `Subscribe Now - R${totalPrice !== null ? totalPrice : "N/A"}/month`
           )}
         </Button>
         
