@@ -10,8 +10,9 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { useUserContext } from '@/context/UserContext'
+import { validateRedirect } from '@/utils/validateRedirect'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import React from 'react'
 import { useForm } from 'react-hook-form'
 
@@ -36,6 +37,10 @@ export default function RegisterPage() {
 
   const [error, setError] = React.useState<string | null>(null)
 
+  const searchParams = useSearchParams()
+
+  const next = searchParams.get('next')
+
   const { handleAuthChange } = useUserContext()
 
   const handleRegister = async (values: FormValues) => {
@@ -51,6 +56,13 @@ export default function RegisterPage() {
 
       if (!res.ok) {
         throw new Error('Invalid email or password')
+      }
+
+      const validatedNext = validateRedirect(next)
+
+      if (validatedNext) {
+        router.push(`/login?next=${validatedNext}`)
+        return
       }
 
       handleAuthChange()
