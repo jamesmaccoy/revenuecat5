@@ -1,29 +1,25 @@
 import { google } from 'googleapis'
 import { NextResponse } from 'next/server'
-import { readFileSync } from 'fs'
-import { join } from 'path'
 
 const SCOPES = ['https://www.googleapis.com/auth/analytics.readonly']
 
 export async function GET() {
   try {
-    if (!process.env.GOOGLE_SERVICE_ACCOUNT_PATH) {
-      throw new Error('GOOGLE_SERVICE_ACCOUNT_PATH environment variable is not set')
+    if (!process.env.GOOGLE_SERVICE_ACCOUNT_JSON) {
+      throw new Error('GOOGLE_SERVICE_ACCOUNT_JSON environment variable is not set')
     }
 
     if (!process.env.GA4_PROPERTY_ID) {
       throw new Error('GA4_PROPERTY_ID environment variable is not set')
     }
 
-    // Read the service account file
-    const serviceAccountPath = join(process.cwd(), process.env.GOOGLE_SERVICE_ACCOUNT_PATH)
+    // Parse the service account credentials from the environment variable
     let credentials
     try {
-      const fileContent = readFileSync(serviceAccountPath, 'utf-8')
-      credentials = JSON.parse(fileContent)
+      credentials = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON)
       console.log('Service Account Email:', credentials.client_email)
     } catch (e) {
-      throw new Error(`Error reading service account file: ${e.message}`)
+      throw new Error(`Error parsing GOOGLE_SERVICE_ACCOUNT_JSON: ${e.message}`)
     }
 
     const auth = new google.auth.GoogleAuth({
