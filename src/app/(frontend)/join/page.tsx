@@ -72,12 +72,12 @@ function JoinInner() {
       {/* Booking Summary Header */}
       <div className="pt-12 pb-6">
         <div className="bg-muted p-6 rounded-lg border border-border mb-6 text-center">
-          <h2 className="text-3xl font-semibold mb-2">${bookingTotal}</h2>
+          <h2 className="text-3xl font-semibold mb-2">R{bookingTotal}</h2>
           <p className="text-lg text-muted-foreground">Total for {bookingDuration} nights</p>
         </div>
       </div>
       {/* The actual premium content */}
-      <JoinClient />
+      <JoinClient bookingTotal={bookingTotal} bookingDuration={bookingDuration} />
     </>
   )
 }
