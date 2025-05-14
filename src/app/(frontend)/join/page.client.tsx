@@ -6,13 +6,18 @@ import type { User } from "@/payload-types"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useRevenueCat } from "@/providers/RevenueCat"
-import { Purchases, type Package, type PurchasesError, ErrorCode } from "@revenuecat/purchases-js"
+import { Purchases, type Package, type PurchasesError, ErrorCode, type Product } from "@revenuecat/purchases-js"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Loader2 } from 'lucide-react'
 
 // Add type for RevenueCat error with code
 interface RevenueCatError extends Error {
   code?: ErrorCode;
+}
+
+// Extend Product type to include price
+interface RevenueCatProduct extends Product {
+  price?: number;
 }
 
 export default function JoinClient({ bookingTotal = 'N/A', bookingDuration = 'N/A' }) {
@@ -43,6 +48,7 @@ export default function JoinClient({ bookingTotal = 'N/A', bookingDuration = 'N/
   const [selectedPackage, setSelectedPackage] = useState<string | null>(null)
   const [selectedDuration, setSelectedDuration] = useState<number>(1)
   const [isWineSelected, setIsWineSelected] = useState(false)
+  const [packagePrice, setPackagePrice] = useState<number | null>(null)
 
   const packageDetails = {
     per_night: {
@@ -191,11 +197,75 @@ export default function JoinClient({ bookingTotal = 'N/A', bookingDuration = 'N/
     setSelectedDuration(duration)
   }, [bookingDuration, isWineSelected])
 
+  // Load RevenueCat offerings when initialized
+  useEffect(() => {
+    if (isInitialized) {
+      loadOfferings()
+    }
+  }, [isInitialized])
+
+  const loadOfferings = async () => {
+    setLoadingOfferings(true)
+    try {
+      const fetchedOfferings = await Purchases.getSharedInstance().getOfferings()
+      console.log("All Offerings:", fetchedOfferings.all)
+      
+      // Get the per_night offering specifically
+      const perNightOffering = fetchedOfferings.all["per_night"]
+      
+      if (perNightOffering && perNightOffering.availablePackages.length > 0) {
+        console.log("Per Night packages:", perNightOffering.availablePackages.map(pkg => ({
+          identifier: pkg.webBillingProduct?.identifier,
+          product: pkg.webBillingProduct,
+          price: pkg.webBillingProduct?.price
+        })))
+        setOfferings(perNightOffering.availablePackages)
+      } else {
+        console.warn("No packages found in per_night offering")
+        setOfferings([])
+      }
+    } catch (err) {
+      setPaymentError("Failed to load booking options")
+      console.error("Error loading offerings:", err)
+    } finally {
+      setLoadingOfferings(false)
+    }
+  }
+
+  // Update package price when package or duration changes
+  useEffect(() => {
+    if (!selectedPackage || !offerings.length) return
+
+    const selectedPackageDetails = packageDetails[selectedPackage]
+    if (!selectedPackageDetails) return
+
+    const packageToUse = offerings.find(pkg => 
+      pkg.webBillingProduct?.identifier === selectedPackageDetails.revenueCatId
+    )
+
+    if (packageToUse?.webBillingProduct) {
+      const product = packageToUse.webBillingProduct as RevenueCatProduct
+      if (product.price) {
+        const basePrice = Number(product.price)
+        const multiplier = selectedPackageDetails.priceMultiplier
+        setPackagePrice(basePrice * multiplier)
+      } else {
+        // Fallback to local calculation if RevenueCat price is not available
+        const basePrice = Number(bookingTotal)
+        const multiplier = selectedPackageDetails.priceMultiplier
+        setPackagePrice(basePrice * multiplier)
+      }
+    } else {
+      // Fallback to local calculation if package is not found
+      const basePrice = Number(bookingTotal)
+      const multiplier = selectedPackageDetails.priceMultiplier
+      setPackagePrice(basePrice * multiplier)
+    }
+  }, [selectedPackage, offerings, bookingTotal])
+
   const calculateTotalPrice = () => {
-    if (!bookingTotal || !selectedPackage) return null
-    const basePrice = Number(bookingTotal)
-    const multiplier = packageDetails[selectedPackage]?.priceMultiplier || 1
-    return basePrice * multiplier * selectedDuration
+    if (!packagePrice || !selectedDuration) return null
+    return packagePrice * selectedDuration
   }
 
   useEffect(() => {
@@ -217,40 +287,6 @@ export default function JoinClient({ bookingTotal = 'N/A', bookingDuration = 'N/
 
     fetchGuests()
   }, [])
-
-  // Load RevenueCat offerings when initialized
-  useEffect(() => {
-    if (isInitialized) {
-      loadOfferings()
-    }
-  }, [isInitialized])
-
-  const loadOfferings = async () => {
-    setLoadingOfferings(true)
-    try {
-      const fetchedOfferings = await Purchases.getSharedInstance().getOfferings()
-      console.log("All Offerings:", fetchedOfferings.all)
-      
-      // Get the per_night offering specifically
-      const perNightOffering = fetchedOfferings.all["per_night"]
-      
-      if (perNightOffering && perNightOffering.availablePackages.length > 0) {
-        console.log("Per Night packages:", perNightOffering.availablePackages.map(pkg => ({
-          identifier: pkg.webBillingProduct?.identifier,
-          product: pkg.webBillingProduct
-        })))
-        setOfferings(perNightOffering.availablePackages)
-      } else {
-        console.warn("No packages found in per_night offering")
-        setOfferings([])
-      }
-    } catch (err) {
-      setPaymentError("Failed to load booking options")
-      console.error("Error loading offerings:", err)
-    } finally {
-      setLoadingOfferings(false)
-    }
-  }
 
   const handleBooking = async () => {
     setPaymentLoading(true)
@@ -444,7 +480,7 @@ export default function JoinClient({ bookingTotal = 'N/A', bookingDuration = 'N/
             </ul>
             <div className="flex justify-between items-center">
               <span className="text-2xl font-bold">
-                R{selectedPackage ? Number(bookingTotal) * (packageDetails[selectedPackage]?.priceMultiplier || 1) : "N/A"}/night
+                R{packagePrice || "N/A"}/night
               </span>
             </div>
           </div>
@@ -471,7 +507,9 @@ export default function JoinClient({ bookingTotal = 'N/A', bookingDuration = 'N/
               ))}
             </ul>
             <div className="flex justify-between items-center">
-              <span className="text-2xl font-bold">R{Number(bookingTotal) * 1.5}/night</span>
+              <span className="text-2xl font-bold">
+                R{packagePrice ? packagePrice * 1.5 : "N/A"}/night
+              </span>
               <div className={`w-5 h-5 rounded-full border-2 ${
                 isWineSelected
                   ? "border-primary bg-primary" 
@@ -494,7 +532,7 @@ export default function JoinClient({ bookingTotal = 'N/A', bookingDuration = 'N/
         <div className="flex justify-between items-center mb-4">
           <span className="text-muted-foreground">Rate per night:</span>
           <span className="font-medium">
-            R{selectedPackage ? Number(bookingTotal) * (packageDetails[selectedPackage]?.priceMultiplier || 1) : "N/A"}
+            R{packagePrice || "N/A"}
           </span>
         </div>
         <div className="flex justify-between items-center mb-4">
