@@ -46,42 +46,99 @@ export default function JoinClient({ bookingTotal = 'N/A', bookingDuration = 'N/
   const packageDetails = {
     per_night: {
       title: "Per Night",
-      description: "Stay just 1 night",
+      description: "Standard nightly rate",
       priceMultiplier: 1,
       minNights: 1,
-      maxNights: 1,
+      maxNights: 3,
       features: [
         "Standard accommodation",
         "Basic amenities",
         "Self-service"
-      ]
+      ],
+      revenueCatId: "per_night"
     },
-    per_night_luxury: {
-      title: "Per Day VIP",
-      description: "Assign a host for drinks and activities",
-      priceMultiplier: 2,
-      minNights: 1,
+    three_nights: {
+      title: "3 Night Package",
+      description: "Special rate for 3+ nights",
+      priceMultiplier: 0.9,
+      minNights: 3,
       maxNights: 7,
       features: [
-        "Dedicated host",
-        "Premium amenities",
-        "Drinks service",
-        "Activity planning",
-        "Priority support"
-      ]
+        "Standard accommodation",
+        "Basic amenities",
+        "Self-service",
+        "10% discount on total"
+      ],
+      revenueCatId: "3nights"
+    },
+    weekly: {
+      title: "Weekly Package",
+      description: "Best value for week-long stays",
+      priceMultiplier: 0.8,
+      minNights: 7,
+      maxNights: 29,
+      features: [
+        "Standard accommodation",
+        "Basic amenities",
+        "Self-service",
+        "20% discount on total"
+      ],
+      revenueCatId: "Weekly"
+    },
+    monthly: {
+      title: "Monthly Package",
+      description: "Extended stay rate",
+      priceMultiplier: 0.7,
+      minNights: 29,
+      maxNights: 365,
+      features: [
+        "Standard accommodation",
+        "Basic amenities",
+        "Self-service",
+        "30% discount on total"
+      ],
+      revenueCatId: "monthly"
+    },
+    wine: {
+      title: "Wine Package",
+      description: "Includes wine tasting and selection",
+      priceMultiplier: 1.5,
+      minNights: 1,
+      maxNights: 365,
+      features: [
+        "Standard accommodation",
+        "Wine tasting experience",
+        "Curated wine selection",
+        "Sommelier consultation"
+      ],
+      revenueCatId: "Bottle_wine"
     }
   }
+
+  // Determine package based on duration
+  useEffect(() => {
+    if (!bookingDuration) return
+
+    const duration = Number(bookingDuration)
+    let packageId = "per_night"
+
+    if (duration >= 29) {
+      packageId = "monthly"
+    } else if (duration >= 7) {
+      packageId = "weekly"
+    } else if (duration >= 3) {
+      packageId = "three_nights"
+    }
+
+    setSelectedPackage(packageId)
+    setSelectedDuration(duration)
+  }, [bookingDuration])
 
   const calculateTotalPrice = () => {
     if (!bookingTotal || !selectedPackage) return null
     const basePrice = Number(bookingTotal)
     const multiplier = packageDetails[selectedPackage]?.priceMultiplier || 1
     return basePrice * multiplier * selectedDuration
-  }
-
-  const handlePackageSelect = (packageId: string, duration: number) => {
-    setSelectedPackage(packageId)
-    setSelectedDuration(duration)
   }
 
   useEffect(() => {
@@ -144,10 +201,15 @@ export default function JoinClient({ bookingTotal = 'N/A', bookingDuration = 'N/
     
     try {
       // Find the appropriate package based on RevenueCat configuration
+      const selectedPackageDetails = selectedPackage ? packageDetails[selectedPackage] : null
+      if (!selectedPackageDetails) {
+        throw new Error("No package selected")
+      }
+
       const bookingPackage = offerings.find(pkg => {
         const identifier = pkg.webBillingProduct?.identifier
-        console.log("Checking package:", identifier)
-        return identifier === selectedPackage
+        console.log("Checking package:", identifier, "against", selectedPackageDetails.revenueCatId)
+        return identifier === selectedPackageDetails.revenueCatId
       })
       
       if (!bookingPackage) {
@@ -155,13 +217,14 @@ export default function JoinClient({ bookingTotal = 'N/A', bookingDuration = 'N/
           identifier: pkg.webBillingProduct?.identifier,
           product: pkg.webBillingProduct
         })))
-        throw new Error("Booking package not found. Please contact support.")
+        throw new Error(`Booking package not found for ${selectedPackageDetails.revenueCatId}. Please contact support.`)
       }
 
       // Log which package was found
       console.log("Selected package:", {
         identifier: bookingPackage.webBillingProduct?.identifier,
-        product: bookingPackage.webBillingProduct
+        product: bookingPackage.webBillingProduct,
+        duration: selectedDuration
       })
       
       // Process the purchase with better error handling
@@ -184,9 +247,8 @@ export default function JoinClient({ bookingTotal = 'N/A', bookingDuration = 'N/
           toDate: toDate.toISOString(),
           duration: selectedDuration,
           packageType: selectedPackage,
+          revenueCatPackageId: selectedPackageDetails.revenueCatId,
           totalAmount: calculateTotalPrice(),
-          // You can add selected guests here if you implement that feature
-          // guestIds: selectedGuests.map(guest => guest.id),
         }
         
         const response = await fetch('/api/bookings', {
@@ -305,21 +367,18 @@ export default function JoinClient({ bookingTotal = 'N/A', bookingDuration = 'N/
 
       {/* Package Selection */}
       <div className="mb-8">
-        <h2 className="text-2xl font-semibold mb-4">Select Your Package</h2>
+        <h2 className="text-2xl font-semibold mb-4">Your Selected Package</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Per Night Package */}
-          <div 
-            className={`p-6 rounded-lg border-2 cursor-pointer transition-all ${
-              selectedPackage === "per_night" && selectedDuration === 1
-                ? "border-primary bg-primary/5" 
-                : "border-border hover:border-primary/50"
-            }`}
-            onClick={() => handlePackageSelect("per_night", 1)}
-          >
-            <h3 className="text-xl font-semibold mb-2">{packageDetails.per_night.title}</h3>
-            <p className="text-muted-foreground mb-4">{packageDetails.per_night.description}</p>
+          {/* Main Package */}
+          <div className="p-6 rounded-lg border-2 border-primary bg-primary/5">
+            <h3 className="text-xl font-semibold mb-2">
+              {selectedPackage ? packageDetails[selectedPackage]?.title : "Loading..."}
+            </h3>
+            <p className="text-muted-foreground mb-4">
+              {selectedPackage ? packageDetails[selectedPackage]?.description : ""}
+            </p>
             <ul className="mb-4 space-y-2">
-              {packageDetails.per_night.features.map((feature, index) => (
+              {selectedPackage && packageDetails[selectedPackage]?.features.map((feature, index) => (
                 <li key={index} className="flex items-center text-sm">
                   <span className="mr-2">•</span>
                   {feature}
@@ -327,94 +386,25 @@ export default function JoinClient({ bookingTotal = 'N/A', bookingDuration = 'N/
               ))}
             </ul>
             <div className="flex justify-between items-center">
-              <span className="text-2xl font-bold">R{bookingTotal}/night</span>
-              <div className={`w-5 h-5 rounded-full border-2 ${
-                selectedPackage === "per_night" && selectedDuration === 1
-                  ? "border-primary bg-primary" 
-                  : "border-border"
-              }`} />
+              <span className="text-2xl font-bold">
+                R{selectedPackage ? Number(bookingTotal) * (packageDetails[selectedPackage]?.priceMultiplier || 1) : "N/A"}/night
+              </span>
             </div>
           </div>
 
-          {/* 3 Day Package */}
+          {/* Wine Package Add-on */}
           <div 
             className={`p-6 rounded-lg border-2 cursor-pointer transition-all ${
-              selectedPackage === "per_night" && selectedDuration === 3
+              selectedPackage === "wine"
                 ? "border-primary bg-primary/5" 
                 : "border-border hover:border-primary/50"
             }`}
-            onClick={() => handlePackageSelect("per_night", 3)}
+            onClick={() => setSelectedPackage(selectedPackage === "wine" ? null : "wine")}
           >
-            <h3 className="text-xl font-semibold mb-2">3 Day Package</h3>
-            <p className="text-muted-foreground mb-4">Stay the long weekend</p>
+            <h3 className="text-xl font-semibold mb-2">{packageDetails.wine.title}</h3>
+            <p className="text-muted-foreground mb-4">{packageDetails.wine.description}</p>
             <ul className="mb-4 space-y-2">
-              {packageDetails.per_night.features.map((feature, index) => (
-                <li key={index} className="flex items-center text-sm">
-                  <span className="mr-2">•</span>
-                  {feature}
-                </li>
-              ))}
-              <li className="flex items-center text-sm text-primary">
-                <span className="mr-2">•</span>
-                Special weekend rate
-              </li>
-            </ul>
-            <div className="flex justify-between items-center">
-              <span className="text-2xl font-bold">R{Number(bookingTotal) * 3}/3 nights</span>
-              <div className={`w-5 h-5 rounded-full border-2 ${
-                selectedPackage === "per_night" && selectedDuration === 3
-                  ? "border-primary bg-primary" 
-                  : "border-border"
-              }`} />
-            </div>
-          </div>
-
-          {/* 7 Day Package */}
-          <div 
-            className={`p-6 rounded-lg border-2 cursor-pointer transition-all ${
-              selectedPackage === "per_night" && selectedDuration === 7
-                ? "border-primary bg-primary/5" 
-                : "border-border hover:border-primary/50"
-            }`}
-            onClick={() => handlePackageSelect("per_night", 7)}
-          >
-            <h3 className="text-xl font-semibold mb-2">7 Day Package</h3>
-            <p className="text-muted-foreground mb-4">Enjoy the entire week</p>
-            <ul className="mb-4 space-y-2">
-              {packageDetails.per_night.features.map((feature, index) => (
-                <li key={index} className="flex items-center text-sm">
-                  <span className="mr-2">•</span>
-                  {feature}
-                </li>
-              ))}
-              <li className="flex items-center text-sm text-primary">
-                <span className="mr-2">•</span>
-                Weekly discount
-              </li>
-            </ul>
-            <div className="flex justify-between items-center">
-              <span className="text-2xl font-bold">R{Number(bookingTotal) * 7}/7 nights</span>
-              <div className={`w-5 h-5 rounded-full border-2 ${
-                selectedPackage === "per_night" && selectedDuration === 7
-                  ? "border-primary bg-primary" 
-                  : "border-border"
-              }`} />
-            </div>
-          </div>
-
-          {/* VIP Package */}
-          <div 
-            className={`p-6 rounded-lg border-2 cursor-pointer transition-all ${
-              selectedPackage === "per_night_luxury"
-                ? "border-primary bg-primary/5" 
-                : "border-border hover:border-primary/50"
-            }`}
-            onClick={() => handlePackageSelect("per_night_luxury", 1)}
-          >
-            <h3 className="text-xl font-semibold mb-2">{packageDetails.per_night_luxury.title}</h3>
-            <p className="text-muted-foreground mb-4">{packageDetails.per_night_luxury.description}</p>
-            <ul className="mb-4 space-y-2">
-              {packageDetails.per_night_luxury.features.map((feature, index) => (
+              {packageDetails.wine.features.map((feature, index) => (
                 <li key={index} className="flex items-center text-sm">
                   <span className="mr-2">•</span>
                   {feature}
@@ -422,9 +412,9 @@ export default function JoinClient({ bookingTotal = 'N/A', bookingDuration = 'N/
               ))}
             </ul>
             <div className="flex justify-between items-center">
-              <span className="text-2xl font-bold">R{Number(bookingTotal) * 2}/night</span>
+              <span className="text-2xl font-bold">R{Number(bookingTotal) * 1.5}/night</span>
               <div className={`w-5 h-5 rounded-full border-2 ${
-                selectedPackage === "per_night_luxury"
+                selectedPackage === "wine"
                   ? "border-primary bg-primary" 
                   : "border-border"
               }`} />
