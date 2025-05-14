@@ -10,8 +10,7 @@ import { RenderHero } from '@/heros/RenderHero'
 import { RenderBlocks } from '@/blocks/RenderBlocks'
 import { LivePreviewListener } from '@/components/LivePreviewListener'
 import { PayloadRedirects } from '@/components/PayloadRedirects'
-import DatePicker from 'react-datepicker'
-import 'react-datepicker/dist/react-datepicker.css'
+import { DatePicker } from "@/components/ui/date-picker"
 
 interface PageClientProps {
   page: PageType | null
@@ -96,29 +95,27 @@ const PageClient: React.FC<PageClientProps> = ({ page, draft, url }) => {
         <div className="container mt-8 flex flex-col items-center space-y-4">
           {/* Date Picker for Stay Length */}
           <div className="flex flex-col space-y-2 w-full max-w-md">
-            <label className="text-gray-700 font-medium">Stay Length</label>
-            <div className="flex space-x-2">
-              <DatePicker
-                selected={startDate}
-                onChange={(date: Date) => setStartDate(date)}
-                selectsStart
-                startDate={startDate}
-                endDate={endDate}
-                minDate={new Date()}
-                className="border border-gray-300 rounded-lg px-3 py-2 text-gray-800 w-full"
-                dateFormat="MMM d, yyyy"
-              />
-              <span className="text-gray-500 self-center">to</span>
-              <DatePicker
-                selected={endDate}
-                onChange={(date: Date) => setEndDate(date)}
-                selectsEnd
-                startDate={startDate}
-                endDate={endDate}
-                minDate={startDate ?? undefined}
-                className="border border-gray-300 rounded-lg px-3 py-2 text-gray-800 w-full"
-                dateFormat="MMM d, yyyy"
-              />
+            <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+              Stay Length
+            </label>
+            <div className="flex items-center gap-2">
+              <div className="relative w-full">
+                <DatePicker
+                  date={startDate}
+                  onSelect={(date) => setStartDate(date || null)}
+                  placeholder="Start date"
+                  minDate={new Date()}
+                />
+              </div>
+              <span className="text-muted-foreground">to</span>
+              <div className="relative w-full">
+                <DatePicker
+                  date={endDate}
+                  onSelect={(date) => setEndDate(date || null)}
+                  placeholder="End date"
+                  minDate={startDate || undefined}
+                />
+              </div>
             </div>
           </div>
 
