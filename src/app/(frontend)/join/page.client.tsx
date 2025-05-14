@@ -169,7 +169,7 @@ export default function JoinClient({ bookingTotal = 'N/A', bookingDuration = 'N/
     if (isWineSelected) {
       if (duration >= 29) {
         packageId = "monthly" // Keep monthly as is for wine
-      } else if (duration >= 7) {
+      } else if (duration >= 4) {
         packageId = "hosted7nights"
       } else if (duration >= 2) {
         packageId = "hosted3nights"
@@ -180,7 +180,7 @@ export default function JoinClient({ bookingTotal = 'N/A', bookingDuration = 'N/
       // Standard package selection
       if (duration >= 29) {
         packageId = "monthly"
-      } else if (duration >= 7) {
+      } else if (duration >= 4) {
         packageId = "weekly"
       } else if (duration >= 2) {
         packageId = "three_nights"
