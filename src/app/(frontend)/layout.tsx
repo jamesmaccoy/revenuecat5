@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import Script from 'next/script'
 
 import { cn } from 'src/utilities/cn'
 import { GeistMono } from 'geist/font/mono'
@@ -19,7 +20,8 @@ import { UserProvider } from '@/context/UserContext'
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const { isEnabled } = await draftMode()
-
+  const GA_ID = process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS
+  console.log('GA_ID:', GA_ID)
   return (
     <UserProvider>
       <html
@@ -44,6 +46,24 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             {children}
             <Footer />
           </Providers>
+          <Script
+            strategy="afterInteractive"
+            src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
+          />
+          <Script
+            id="google-analytics"
+            strategy="afterInteractive"
+            dangerouslySetInnerHTML={{
+              __html: `
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', '${GA_ID}', {
+        page_path: window.location.pathname,
+      });
+    `,
+            }}
+          />
         </body>
       </html>
     </UserProvider>
