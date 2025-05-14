@@ -42,6 +42,7 @@ export default function JoinClient({ bookingTotal = 'N/A', bookingDuration = 'N/
 
   const [selectedPackage, setSelectedPackage] = useState<string | null>(null)
   const [selectedDuration, setSelectedDuration] = useState<number>(1)
+  const [isWineSelected, setIsWineSelected] = useState(false)
 
   const packageDetails = {
     per_night: {
@@ -57,6 +58,19 @@ export default function JoinClient({ bookingTotal = 'N/A', bookingDuration = 'N/
       ],
       revenueCatId: "per_night"
     },
+    per_night_luxury: {
+      title: "Luxury Night",
+      description: "Premium nightly rate",
+      priceMultiplier: 1.5,
+      minNights: 1,
+      maxNights: 3,
+      features: [
+        "Premium accommodation",
+        "Enhanced amenities",
+        "Priority service"
+      ],
+      revenueCatId: "per_night_luxury"
+    },
     three_nights: {
       title: "3 Night Package",
       description: "Special rate for 3+ nights",
@@ -71,6 +85,20 @@ export default function JoinClient({ bookingTotal = 'N/A', bookingDuration = 'N/
       ],
       revenueCatId: "3nights"
     },
+    hosted3nights: {
+      title: "Hosted 3 Nights",
+      description: "Premium 3-night experience",
+      priceMultiplier: 1.4,
+      minNights: 3,
+      maxNights: 7,
+      features: [
+        "Premium accommodation",
+        "Dedicated host",
+        "Enhanced amenities",
+        "Priority service"
+      ],
+      revenueCatId: "hosted3nights"
+    },
     weekly: {
       title: "Weekly Package",
       description: "Best value for week-long stays",
@@ -84,6 +112,21 @@ export default function JoinClient({ bookingTotal = 'N/A', bookingDuration = 'N/
         "20% discount on total"
       ],
       revenueCatId: "Weekly"
+    },
+    hosted7nights: {
+      title: "Hosted Weekly",
+      description: "Premium week-long experience",
+      priceMultiplier: 1.3,
+      minNights: 7,
+      maxNights: 29,
+      features: [
+        "Premium accommodation",
+        "Dedicated host",
+        "Enhanced amenities",
+        "Priority service",
+        "15% discount on total"
+      ],
+      revenueCatId: "hosted7nights"
     },
     monthly: {
       title: "Monthly Package",
@@ -101,7 +144,7 @@ export default function JoinClient({ bookingTotal = 'N/A', bookingDuration = 'N/
     },
     wine: {
       title: "Wine Package",
-      description: "Includes wine tasting and selection",
+      description: "Includes wine tasting and selection platters",
       priceMultiplier: 1.5,
       minNights: 1,
       maxNights: 365,
@@ -115,24 +158,38 @@ export default function JoinClient({ bookingTotal = 'N/A', bookingDuration = 'N/
     }
   }
 
-  // Determine package based on duration
+  // Determine package based on duration and wine selection
   useEffect(() => {
     if (!bookingDuration) return
 
     const duration = Number(bookingDuration)
     let packageId = "per_night"
 
-    if (duration >= 29) {
-      packageId = "monthly"
-    } else if (duration >= 7) {
-      packageId = "weekly"
-    } else if (duration >= 3) {
-      packageId = "three_nights"
+    // If wine package is selected, use the corresponding luxury/hosted package
+    if (isWineSelected) {
+      if (duration >= 29) {
+        packageId = "monthly" // Keep monthly as is for wine
+      } else if (duration >= 7) {
+        packageId = "hosted7nights"
+      } else if (duration >= 2) {
+        packageId = "hosted3nights"
+      } else {
+        packageId = "per_night_luxury"
+      }
+    } else {
+      // Standard package selection
+      if (duration >= 29) {
+        packageId = "monthly"
+      } else if (duration >= 7) {
+        packageId = "weekly"
+      } else if (duration >= 2) {
+        packageId = "three_nights"
+      }
     }
 
     setSelectedPackage(packageId)
     setSelectedDuration(duration)
-  }, [bookingDuration])
+  }, [bookingDuration, isWineSelected])
 
   const calculateTotalPrice = () => {
     if (!bookingTotal || !selectedPackage) return null
@@ -395,11 +452,13 @@ export default function JoinClient({ bookingTotal = 'N/A', bookingDuration = 'N/
           {/* Wine Package Add-on */}
           <div 
             className={`p-6 rounded-lg border-2 cursor-pointer transition-all ${
-              selectedPackage === "wine"
+              isWineSelected
                 ? "border-primary bg-primary/5" 
                 : "border-border hover:border-primary/50"
             }`}
-            onClick={() => setSelectedPackage(selectedPackage === "wine" ? null : "wine")}
+            onClick={() => {
+              setIsWineSelected(!isWineSelected)
+            }}
           >
             <h3 className="text-xl font-semibold mb-2">{packageDetails.wine.title}</h3>
             <p className="text-muted-foreground mb-4">{packageDetails.wine.description}</p>
@@ -414,7 +473,7 @@ export default function JoinClient({ bookingTotal = 'N/A', bookingDuration = 'N/
             <div className="flex justify-between items-center">
               <span className="text-2xl font-bold">R{Number(bookingTotal) * 1.5}/night</span>
               <div className={`w-5 h-5 rounded-full border-2 ${
-                selectedPackage === "wine"
+                isWineSelected
                   ? "border-primary bg-primary" 
                   : "border-border"
               }`} />
