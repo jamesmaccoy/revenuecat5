@@ -1,10 +1,10 @@
-import { adminOrSelf } from '@/access/adminOrSelf'
 import { adminOrSelfField } from '@/access/adminOrSelfField'
 import { isAdmin } from '@/access/isAdmin'
 import { isAdminField } from '@/access/isAdminField'
 import { slugField } from '@/fields/slug'
 import type { CollectionConfig } from 'payload'
 import { adminOrSelfOrGuests } from './access/adminOrSelfOrGuests'
+import { generateJwtToken, verifyJwtToken } from '@/utilities/token'
 
 export const Booking: CollectionConfig = {
   slug: 'bookings',
@@ -19,6 +19,427 @@ export const Booking: CollectionConfig = {
     useAsTitle: 'id',
     defaultColumns: ['customer', 'post', 'fromDate', 'toDate', 'guests'],
   },
+  endpoints: [
+    // This endpoint is used to generate a token for the booking
+    // and return it to the customer
+    {
+      path: '/:bookingId/token',
+      method: 'post',
+      handler: async (req) => {
+        if (!req.user) {
+          return Response.json(
+            {
+              message: 'Unauthorized',
+            },
+            { status: 401 },
+          )
+        }
+
+        const bookingId =
+          req.routeParams && 'bookingId' in req.routeParams && req.routeParams.bookingId
+
+        // This is not suppossed to happen, but just in case
+        if (!bookingId || typeof bookingId !== 'string') {
+          return Response.json(
+            {
+              message: 'Booking ID not provided',
+            },
+            { status: 400 },
+          )
+        }
+
+        const bookings = await req.payload.find({
+          collection: 'bookings',
+          where: {
+            and: [
+              {
+                id: {
+                  equals: bookingId,
+                },
+              },
+              {
+                customer: {
+                  equals: req.user.id,
+                },
+              },
+            ],
+          },
+          limit: 1,
+          pagination: false,
+        })
+
+        if (bookings.docs.length === 0) {
+          return Response.json(
+            {
+              message: 'Booking not found',
+            },
+            { status: 404 },
+          )
+        }
+
+        const booking = bookings.docs[0]
+
+        if (!booking) {
+          return Response.json(
+            {
+              message: 'Booking not found',
+            },
+            { status: 404 },
+          )
+        }
+
+        if (booking.token) {
+          return Response.json({
+            token: booking.token,
+          })
+        }
+
+        const token = generateJwtToken({
+          bookingId: booking.id,
+          customerId:
+            typeof booking.customer === 'string' ? booking.customer : booking.customer?.id,
+        })
+
+        await req.payload.update({
+          collection: 'bookings',
+          id: bookingId,
+          data: {
+            token,
+          },
+        })
+        return Response.json({
+          token,
+        })
+      },
+    },
+
+    // This endpoint is used to refresh the current token.
+    // If the token is refreshed, the old token will be invalidated
+    {
+      path: '/:bookingId/refresh-token',
+      method: 'post',
+      handler: async (req) => {
+        if (!req.user) {
+          return Response.json(
+            {
+              message: 'Unauthorized',
+            },
+            { status: 401 },
+          )
+        }
+
+        const bookingId =
+          req.routeParams && 'bookingId' in req.routeParams && req.routeParams.bookingId
+
+        // This is not supposed to happen, but just in case
+        if (!bookingId || typeof bookingId !== 'string') {
+          return Response.json(
+            {
+              message: 'Booking ID not provided',
+            },
+            { status: 400 },
+          )
+        }
+
+        const bookings = await req.payload.find({
+          collection: 'bookings',
+          where: {
+            and: [
+              {
+                id: {
+                  equals: bookingId,
+                },
+              },
+              {
+                customer: {
+                  equals: req.user.id,
+                },
+              },
+            ],
+          },
+          limit: 1,
+          pagination: false,
+        })
+
+        if (bookings.docs.length === 0) {
+          return Response.json(
+            {
+              message: 'Booking not found',
+            },
+            { status: 404 },
+          )
+        }
+
+        const booking = bookings.docs[0]
+
+        if (!booking) {
+          return Response.json(
+            {
+              message: 'Booking not found',
+            },
+            { status: 404 },
+          )
+        }
+
+        const token = generateJwtToken({
+          bookingId: booking.id,
+          customerId:
+            typeof booking.customer === 'string' ? booking.customer : booking.customer?.id,
+        })
+
+        await req.payload.update({
+          collection: 'bookings',
+          id: bookingId,
+          data: {
+            token,
+          },
+        })
+        return Response.json({
+          token,
+        })
+      },
+    },
+
+    // This endpoint is used to accept the invite for the booking
+    // and add the user to the guests list
+    {
+      path: '/:bookingId/accept-invite/:token',
+      method: 'post',
+      handler: async (req) => {
+        if (!req.user) {
+          return Response.json(
+            {
+              message: 'Unauthorized',
+            },
+            { status: 401 },
+          )
+        }
+
+        const bookingId =
+          req.routeParams && 'bookingId' in req.routeParams && req.routeParams.bookingId
+
+        // This is not suppossed to happen, but just in case
+        if (!bookingId || typeof bookingId !== 'string') {
+          return Response.json(
+            {
+              message: 'Booking ID not provided',
+            },
+            { status: 400 },
+          )
+        }
+
+        const token = req.routeParams && 'token' in req.routeParams && req.routeParams.token
+
+        // This is not suppossed to happen, but just in case
+        if (!token || typeof token !== 'string') {
+          return Response.json(
+            {
+              message: 'Token not provided',
+            },
+            { status: 400 },
+          )
+        }
+
+        const bookings = await req.payload.find({
+          collection: 'bookings',
+          where: {
+            and: [
+              {
+                id: {
+                  equals: bookingId,
+                },
+              },
+              {
+                token: {
+                  equals: token,
+                },
+              },
+            ],
+          },
+          limit: 1,
+          pagination: false,
+        })
+
+        if (bookings.docs.length === 0) {
+          return Response.json(
+            {
+              message: 'Booking not found',
+            },
+            { status: 404 },
+          )
+        }
+
+        const booking = bookings.docs[0]
+
+        if (!booking) {
+          return Response.json(
+            {
+              message: 'Booking not found',
+            },
+            { status: 404 },
+          )
+        }
+
+        if (
+          booking.guests?.some((guest) =>
+            typeof guest === 'string' ? guest === req.user?.id : guest.id === req.user?.id,
+          ) ||
+          (typeof booking.customer === 'string'
+            ? booking.customer === req.user.id
+            : booking.customer?.id === req.user.id)
+        ) {
+          return Response.json({
+            message: 'User already in booking',
+          })
+        }
+
+        await req.payload.update({
+          collection: 'bookings',
+          id: bookingId,
+          data: {
+            guests: [...(booking.guests || []), req.user.id],
+          },
+        })
+
+        return Response.json({
+          message: 'Booking updated',
+        })
+      },
+    },
+
+    // Read the token, verify and return the payload
+    // This endpoint can be used to get booking id and customer id to fetch the details and show them to the user.
+    {
+      path: '/token/:token',
+      method: 'get',
+      handler: async (req) => {
+        if (!req.user) {
+          return Response.json(
+            {
+              message: 'Unauthorized',
+            },
+            { status: 401 },
+          )
+        }
+
+        const token = req.routeParams && 'token' in req.routeParams && req.routeParams.token
+
+        // This is not suppossed to happen, but just in case
+        if (!token || typeof token !== 'string') {
+          return Response.json(
+            {
+              message: 'Token not provided',
+            },
+            { status: 400 },
+          )
+        }
+
+        const payload = verifyJwtToken(token)
+
+        return Response.json(payload)
+      },
+    },
+
+    // This will remove a guest from the booking
+    {
+      path: '/:bookingId/guests/:guestId',
+      method: 'delete',
+      handler: async (req) => {
+        if (!req.user) {
+          return Response.json(
+            {
+              message: 'Unauthorized',
+            },
+            { status: 401 },
+          )
+        }
+
+        const bookingId =
+          req.routeParams && 'bookingId' in req.routeParams && req.routeParams.bookingId
+
+        // This is not suppossed to happen, but just in case
+        if (!bookingId || typeof bookingId !== 'string') {
+          return Response.json(
+            {
+              message: 'Booking ID not provided',
+            },
+            { status: 400 },
+          )
+        }
+
+        const guestId = req.routeParams && 'guestId' in req.routeParams && req.routeParams.guestId
+
+        // This is not suppossed to happen, but just in case
+        if (!guestId || typeof guestId !== 'string') {
+          return Response.json(
+            {
+              message: 'Guest ID not provided',
+            },
+            { status: 400 },
+          )
+        }
+
+        const bookings = await req.payload.find({
+          collection: 'bookings',
+          where: {
+            and: [
+              {
+                id: {
+                  equals: bookingId,
+                },
+              },
+              {
+                guests: {
+                  contains: guestId,
+                },
+              },
+              {
+                customer: {
+                  equals: req.user.id,
+                },
+              },
+            ],
+          },
+          limit: 1,
+          pagination: false,
+        })
+
+        if (bookings.docs.length === 0) {
+          return Response.json(
+            {
+              message: 'Booking not found',
+            },
+            { status: 404 },
+          )
+        }
+
+        const booking = bookings.docs[0]
+
+        if (!booking || !booking.guests) {
+          return Response.json(
+            {
+              message: 'Booking not found',
+            },
+            { status: 404 },
+          )
+        }
+
+        await req.payload.update({
+          collection: 'bookings',
+          id: bookingId,
+          data: {
+            guests: booking.guests.filter((guest) =>
+              typeof guest === 'string' ? guest !== guestId : guest.id !== guestId,
+            ),
+          },
+        })
+
+        return Response.json({
+          message: 'Guest removed from booking',
+        })
+      },
+    },
+  ],
   access: {
     create: ({ req: { user } }) => {
       if (!user) return false;
@@ -71,6 +492,16 @@ export const Booking: CollectionConfig = {
       },
       access: {
         update: isAdminField,
+      },
+    },
+    {
+      name: 'token',
+      label: 'Token',
+      type: 'text',
+      required: true,
+      admin: {
+        readOnly: true,
+        hidden: true,
       },
     },
     {

@@ -13,19 +13,15 @@ import { getPayload } from 'payload'
 // import { BookingsList } from './BookingsList'
 
 export default async function Bookings() {
-  const { user: currentUser } = await getMeUser({
-    nullUserRedirect: `/login?redirect=/bookings`,
-    validUserRedirect: undefined,
-  })
+  const { user } = await getMeUser()
 
-  if (!currentUser) {
-    console.error('User should have been redirected by getMeUser, but was not.')
-    redirect('/login?redirect=/bookings')
+  if (!user) {
+    redirect('/login?next=/bookings')
   }
 
   const [upcomingBookings, pastBookings] = await Promise.all([
-    getBookings('upcoming', currentUser),
-    getBookings('past', currentUser),
+    getBookings('upcoming', user),
+    getBookings('past', user),
   ])
 
   const formattedUpcomingBookings = upcomingBookings.docs.map((booking) => ({
@@ -61,7 +57,9 @@ export default async function Bookings() {
         {upcomingBookings.docs.length === 0 && pastBookings.docs.length === 0 ? (
           <div className="text-center py-10">
             <h2 className="text-4xl font-medium tracking-tighter mb-4">No bookings</h2>
-            <p className="text-muted-foreground">You don't have any upcoming or past bookings.</p>
+            <p className="text-muted-foreground">
+              You don&apos;t have any upcoming or past bookings.
+            </p>
           </div>
         ) : (
           <>
