@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSideURL } from './utilities/getURL'
+import { jwtDecode } from 'jwt-decode' 
+import type { User } from './payload-types' // Ensure User type includes 'role' (as an array of strings)
 
 // Paths that require authentication and subscription
-const PROTECTED_PATHS = ['/admin', '/premium-content']
+const PROTECTED_PATHS = ['/admin', '/join']
 
 // Paths that are always allowed
 const PUBLIC_PATHS = ['/login', '/subscribe', '/register']
+
+// Define an array of professional entitlement IDs
+const PROFESSIONAL_ENTITLEMENT_IDS = ['pro', 'simpleplek_admin'] // CONFIRM THESE IDs
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
@@ -30,40 +34,92 @@ export async function middleware(request: NextRequest) {
 
   if (!authCookie?.value) {
     console.log('No auth cookie found, redirecting to login')
-    return NextResponse.redirect(new URL('/login', request.url))
+    if (PROTECTED_PATHS.some((path) => pathname.startsWith(path))) {
+        return NextResponse.redirect(new URL('/login', request.url))
+    }
+    return NextResponse.next() // Allow non-protected paths if no auth cookie (e.g. homepage)
   }
 
-  // Check subscription status for protected routes
-  if (isProtectedPath) {
+  let userRoles: string[] = []
+  try {
+    // Assuming your JWT structure has roles like: { user: { role: ['admin', 'customer'] } }
+    // Or directly: { role: ['admin', 'customer'] }
+    // Adjust the decoding and path to roles as per your actual JWT structure.
+    const decodedToken = jwtDecode<Partial<User & { role?: string[] }>>(authCookie.value)
+    userRoles = decodedToken.role || (decodedToken as any).user?.role || []
+  } catch (error) {
+    console.error('Error decoding auth token:', error)
+    if (PROTECTED_PATHS.some((path) => pathname.startsWith(path))) {
+        return NextResponse.redirect(new URL('/login', request.url))
+    }
+    return NextResponse.next()
+  }
+
+  if (pathname.startsWith('/admin')) {
+    if (userRoles.includes('admin')) {
+      console.log('Admin role found, allowing access to /admin')
+      return NextResponse.next()
+    }
+
+    // If not an admin by role, check subscription for /admin access
     try {
-      // Create a new request to our subscription check endpoint
       const checkUrl = new URL('/api/check-subscription', request.url)
       const checkResponse = await fetch(checkUrl, {
-        headers: {
-          cookie: request.headers.get('cookie') || '',
-        },
+        headers: { cookie: request.headers.get('cookie') || '' },
       })
 
+      if (!checkResponse.ok) {
+        console.error(`API call to /api/check-subscription failed with status ${checkResponse.status}`)
+        // Decide if redirect to /bookings or /subscribe on API failure
+        return NextResponse.redirect(new URL('/bookings', request.url)) 
+      }
+
+      const { activeEntitlements, customerId } = await checkResponse.json()
+
+      // Check if any of the user's active entitlements match any of the defined professional IDs
+      const hasProfessionalEntitlement = PROFESSIONAL_ENTITLEMENT_IDS.some(id => 
+        activeEntitlements && activeEntitlements.includes(id)
+      );
+
+      if (hasProfessionalEntitlement) {
+        console.log('Professional entitlement found, allowing access to /admin')
+        const response = NextResponse.next()
+        if (customerId && !request.cookies.get('rc-customer-id')) {
+          response.cookies.set('rc-customer-id', customerId, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', path: '/' })
+        }
+        return response
+      } else {
+        console.log('Professional entitlement NOT found, redirecting to /bookings')
+        return NextResponse.redirect(new URL('/bookings', request.url))
+      }
+    } catch (error) {
+      console.error('Error during subscription check for /admin:', error)
+      return NextResponse.redirect(new URL('/bookings', request.url))
+    }
+  }
+
+  // For other protected paths like /join, a general subscription check might be enough
+  if (PROTECTED_PATHS.some((path) => pathname.startsWith(path) && !pathname.startsWith('/admin'))) {
+    try {
+      const checkUrl = new URL('/api/check-subscription', request.url)
+      const checkResponse = await fetch(checkUrl, {
+        headers: { cookie: request.headers.get('cookie') || '' },
+      })
+      if (!checkResponse.ok) {
+        return NextResponse.redirect(new URL('/subscribe', request.url)) 
+      }
       const { hasActiveSubscription, customerId } = await checkResponse.json()
 
       if (!hasActiveSubscription) {
-        console.log('No active subscription found, redirecting to subscribe')
         return NextResponse.redirect(new URL('/subscribe', request.url))
       }
-
-      // If we have a customer ID but no cookie, set it
+      const response = NextResponse.next()
       if (customerId && !request.cookies.get('rc-customer-id')) {
-        const response = NextResponse.next()
-        response.cookies.set('rc-customer-id', customerId, {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: 'lax',
-          path: '/'
-        })
-        return response
+         response.cookies.set('rc-customer-id', customerId, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', path: '/' })
       }
+      return response
     } catch (error) {
-      console.error('Error checking subscription:', error)
+      console.error('Error checking subscription for general protected path:', error)
       return NextResponse.redirect(new URL('/subscribe', request.url))
     }
   }
@@ -83,4 +139,4 @@ export const config = {
      */
     '/((?!_next/static|_next/image|favicon.ico).*)',
   ],
-} 
+}

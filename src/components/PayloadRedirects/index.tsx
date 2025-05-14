@@ -1,48 +1,28 @@
 import type React from 'react'
-import type { Page, Post } from '@/payload-types'
+// Remove unused type imports
+// import type { Page, Post } from '@/payload-types'
 
-import { getCachedDocument } from '@/utilities/getDocument'
-import { getCachedRedirects } from '@/utilities/getRedirects'
-import { notFound, redirect } from 'next/navigation'
+// Remove unused utility imports
+// import { getCachedDocument } from '@/utilities/getDocument'
+// import { getCachedRedirects } from '@/utilities/getRedirects'
+import { notFound } from 'next/navigation' // Keep notFound
+// Remove redirect as it's handled server-side
+// import { redirect } from 'next/navigation'
 
 interface Props {
   disableNotFound?: boolean
-  url: string
+  url: string // Keep url prop for type compatibility for now
 }
 
 /* This component helps us with SSR based dynamic redirects */
-export const PayloadRedirects: React.FC<Props> = async ({ disableNotFound, url }) => {
-  const redirects = await getCachedRedirects()()
+export const PayloadRedirects: React.FC<Props> = ({ disableNotFound, url }) => {
+  // All redirect logic is removed and handled server-side
 
-  const redirectItem = redirects.find((redirect) => redirect.from === url)
-
-  if (redirectItem) {
-    if (redirectItem.to?.url) {
-      redirect(redirectItem.to.url)
-    }
-
-    let redirectUrl: string
-
-    if (typeof redirectItem.to?.reference?.value === 'string') {
-      const collection = redirectItem.to?.reference?.relationTo
-      const id = redirectItem.to?.reference?.value
-
-      const document = (await getCachedDocument(collection, id)()) as Page | Post
-      redirectUrl = `${redirectItem.to?.reference?.relationTo !== 'pages' ? `/${redirectItem.to?.reference?.relationTo}` : ''}/${
-        document?.slug
-      }`
-    } else {
-      redirectUrl = `${redirectItem.to?.reference?.relationTo !== 'pages' ? `/${redirectItem.to?.reference?.relationTo}` : ''}/${
-        typeof redirectItem.to?.reference?.value === 'object'
-          ? redirectItem.to?.reference?.value?.slug
-          : ''
-      }`
-    }
-
-    if (redirectUrl) redirect(redirectUrl)
+  // If this component renders and disableNotFound is false, call notFound
+  if (!disableNotFound) {
+    notFound()
   }
 
-  if (disableNotFound) return null
-
-  notFound()
+  // Otherwise, render nothing
+  return null
 }

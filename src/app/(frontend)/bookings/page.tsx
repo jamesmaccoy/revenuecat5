@@ -1,5 +1,5 @@
-import { getPayload, Where } from 'payload'
-import config from '@payload-config'
+import { Where } from 'payload'
+import configPromise from '@payload-config'
 import React from 'react'
 import { Post, User } from '@/payload-types'
 import { getMeUser } from '@/utilities/getMeUser'
@@ -8,6 +8,9 @@ import BookingCard from '../../../components/Bookings/BookingCard'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
+import { cookies } from 'next/headers'
+import { getPayload } from 'payload'
+// import { BookingsList } from './BookingsList'
 
 export default async function Bookings() {
   const { user } = await getMeUser()
@@ -44,8 +47,10 @@ export default async function Bookings() {
       <PageClient />
       <div className="my-10 container space-y-10">
         <div className="flex justify-end mb-6">
-          <Link href="/premium-content">
-            <Button variant="default">View Premium Content</Button>
+          <Link href="/join">
+            <Button variant="default">
+              Join a booking
+            </Button>
           </Link>
         </div>
 
@@ -87,7 +92,7 @@ export default async function Bookings() {
 }
 
 const getBookings = async (type: 'upcoming' | 'past', currentUser: User) => {
-  const payload = await getPayload({ config })
+  const payload = await getPayload({ config: configPromise })
 
   let whereQuery: Where
 

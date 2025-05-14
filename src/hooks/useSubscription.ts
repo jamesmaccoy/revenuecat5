@@ -26,28 +26,26 @@ export const useSubscription = (entitlementId?: string): SubscriptionStatus => {
       try {
         // First check with RevenueCat client-side
         if (customerInfo) {
-          const entitlements = customerInfo.entitlements || {}
-          const activeEntitlements = Object.keys(entitlements).filter(
-            key => entitlements[key]?.isActive
-          )
+          const entitlements = customerInfo.entitlements?.active || {};
+          const activeEntitlementKeys = Object.keys(entitlements);
 
-          const isSubscribed = entitlementId
-            ? activeEntitlements.includes(entitlementId)
-            : activeEntitlements.length > 0
+          const isCurrentlySubscribed = entitlementId
+            ? activeEntitlementKeys.includes(entitlementId)
+            : activeEntitlementKeys.length > 0;
 
-          if (isSubscribed) {
+          if (isCurrentlySubscribed) {
             setSubscriptionStatus({
               isSubscribed: true,
-              entitlements: activeEntitlements,
+              entitlements: activeEntitlementKeys,
               expirationDate: entitlementId && entitlements[entitlementId]?.expirationDate
                 ? new Date(entitlements[entitlementId].expirationDate)
-                : activeEntitlements.length > 0 && entitlements[activeEntitlements[0]]?.expirationDate
-                  ? new Date(entitlements[activeEntitlements[0]].expirationDate)
+                : activeEntitlementKeys.length > 0 && entitlements[activeEntitlementKeys[0]]?.expirationDate
+                  ? new Date(entitlements[activeEntitlementKeys[0]].expirationDate)
                   : null,
               isLoading: false,
               error: null,
-            })
-            return
+            });
+            return;
           }
         }
 
@@ -56,33 +54,45 @@ export const useSubscription = (entitlementId?: string): SubscriptionStatus => {
           credentials: 'include',
         })
 
+        // DETAILED LOGGING START
+        console.log('useSubscription - API Response Status:', response.status);
+        console.log('useSubscription - API Response OK:', response.ok);
+        
         if (!response.ok) {
-          throw new Error('Failed to check subscription status')
+            try {
+                const errorText = await response.text();
+                console.error('useSubscription - API Error Response Text:', errorText);
+            } catch (e) {
+                console.error('useSubscription - Could not get error text from response', e);
+            }
+            throw new Error('Failed to check subscription status');
         }
 
-        const { hasActiveSubscription } = await response.json()
+        const { hasActiveSubscription, activeEntitlements, customerId } = await response.json()
 
         setSubscriptionStatus({
           isSubscribed: hasActiveSubscription,
-          entitlements: [],
+          entitlements: activeEntitlements || [],
           expirationDate: null,
           isLoading: false,
           error: null,
-        })
+        });
+
       } catch (err) {
-        console.error('Error checking subscription status:', err)
-        setSubscriptionStatus(prev => ({
-          ...prev,
+        console.error('useSubscription - Error in checkSubscription:', err);
+        setSubscriptionStatus({
+          isSubscribed: false,
+          entitlements: [],
+          expirationDate: null,
           isLoading: false,
-          error: err instanceof Error ? err : new Error('Unknown error checking subscription status'),
-        }))
+          error: err instanceof Error ? err : new Error('Unknown error checking subscription'),
+        });
       }
-    }
+    };
 
-    if (!isRevenueCatLoading) {
-      checkSubscription()
-    }
-  }, [customerInfo, isRevenueCatLoading, entitlementId, revenueCatError])
+    // Always check subscription when the component mounts or when dependencies change
+    checkSubscription();
+  }, [customerInfo, entitlementId]);
 
-  return subscriptionStatus
+  return subscriptionStatus;
 } 
