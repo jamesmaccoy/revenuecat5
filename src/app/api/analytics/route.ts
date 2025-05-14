@@ -34,55 +34,60 @@ export async function GET() {
 
     console.log('GA4 Property ID:', process.env.GA4_PROPERTY_ID)
 
-    // Get data for the last 7 days
+    // Get data for the last 30 days
     const response = await analyticsData.properties.runReport({
       property: `properties/${process.env.GA4_PROPERTY_ID}`,
       requestBody: {
-        dimensions: [{ name: 'date' }, { name: 'pagePath' }, { name: 'deviceCategory' }],
-        metrics: [
-          { name: 'activeUsers' },
-          { name: 'screenPageViews' },
-          { name: 'sessions' },
-          { name: 'totalUsers' },
-          { name: 'newUsers' },
-        ],
+        dimensions: [{ name: 'date' }],
+        metrics: [{ name: 'activeUsers' }, { name: 'screenPageViews' }],
         dateRanges: [
           {
-            startDate: '7daysAgo',
+            startDate: '30daysAgo',
             endDate: 'today',
           },
         ],
         orderBys: [
           {
-            metric: {
-              metricName: 'activeUsers',
+            dimension: {
+              dimensionName: 'date',
             },
-            desc: true,
+            desc: false,
           },
         ],
       },
     })
 
-    // Log the full response for debugging
-    console.log('Full Analytics Response:', JSON.stringify(response.data, null, 2))
-
-    // Check if we have any rows in the response
-    if (!response.data.rows || response.data.rows.length === 0) {
-      console.log('No data rows returned from GA4')
-      return NextResponse.json({
-        message: 'No data available',
-        propertyId: process.env.GA4_PROPERTY_ID,
-        serviceAccount: credentials.client_email,
-        dateRange: '7daysAgo to today',
-        details:
-          'This could mean: 1) No data has been collected yet, 2) The property ID is incorrect, or 3) The service account lacks proper permissions',
+    // Fetch active users now using the Realtime API
+    let activeUsersNow = 0
+    try {
+      const realtimeResponse = await analyticsData.properties.runRealtimeReport({
+        property: `properties/${process.env.GA4_PROPERTY_ID}`,
+        requestBody: {
+          metrics: [{ name: 'activeUsers' }],
+        },
       })
+      activeUsersNow = Number(realtimeResponse.data.rows?.[0]?.metricValues?.[0]?.value || 0)
+    } catch (e) {
+      console.error('Error fetching active users now:', e)
     }
 
-    console.log('Number of rows returned:', response.data.rows.length)
-    console.log('First row data:', response.data.rows[0])
+    // Transform the GA4 response to match the dashboard's expected format
+    const historicalData = (response.data.rows || []).map((row) => {
+      const date = row.dimensionValues?.[0]?.value || ''
+      const users = Number(row.metricValues?.[0]?.value || 0)
+      const views = Number(row.metricValues?.[1]?.value || 0)
+      return { date, users, views }
+    })
 
-    return NextResponse.json(response.data)
+    const total30DayUsers = historicalData.reduce((sum, d) => sum + d.users, 0)
+    const total30DayViews = historicalData.reduce((sum, d) => sum + d.views, 0)
+
+    return NextResponse.json({
+      activeUsersNow,
+      total30DayUsers,
+      total30DayViews,
+      historicalData,
+    })
   } catch (error) {
     console.error('Analytics Error Details:', error)
     return NextResponse.json(
