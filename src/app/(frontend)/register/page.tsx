@@ -47,7 +47,7 @@ export default function RegisterPage() {
       }
 
       handleAuthChange()
-      router.push('/login')
+      router.push('/subscribe')
     } catch (err) {
       console.error(err)
       setError(err.message)

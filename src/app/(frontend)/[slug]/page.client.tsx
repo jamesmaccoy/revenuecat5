@@ -43,8 +43,8 @@ const PageClient: React.FC<PageClientProps> = ({ page, draft, url }) => {
     }
 
     if (!currentUser) {
-      console.log('User context loaded, user not found, redirecting to login.')
-      router.push('/login')
+      console.log('User context loaded, user not found, redirecting to subscribe.')
+      router.push('/subscribe')
       return
     }
 
@@ -145,8 +145,7 @@ const PageClient: React.FC<PageClientProps> = ({ page, draft, url }) => {
               }
 
               // Navigate to join page with parameters
-// In the "Request Availability" button click handler
-router.push(`/join?total=${rate}&duration=${duration}&postId=${page?.id || ''}`)
+              router.push(`/join?total=${rate}&duration=${duration}&postId=${page?.id || ''}`)
             }}
           >
             Request Availability

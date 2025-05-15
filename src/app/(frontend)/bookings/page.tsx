@@ -14,13 +14,13 @@ import { getPayload } from 'payload'
 
 export default async function Bookings() {
   const { user: currentUser } = await getMeUser({
-    nullUserRedirect: `/login?redirect=/bookings`,
+    nullUserRedirect: `/subscribe?redirect=/bookings`,
     validUserRedirect: undefined,
   })
 
   if (!currentUser) {
     console.error('User should have been redirected by getMeUser, but was not.')
-    redirect('/login?redirect=/bookings')
+    redirect('/subscribe?redirect=/bookings')
   }
 
   const [upcomingBookings, pastBookings] = await Promise.all([

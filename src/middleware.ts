@@ -6,7 +6,7 @@ import type { User } from './payload-types' // Ensure User type includes 'role' 
 const PROTECTED_PATHS = ['/admin', '/join']
 
 // Paths that are always allowed
-const PUBLIC_PATHS = ['/login', '/subscribe', '/register']
+const PUBLIC_PATHS = ['/subscribe', '/register']
 
 // Define an array of professional entitlement IDs
 const PROFESSIONAL_ENTITLEMENT_IDS = ['pro', 'simpleplek_admin'] // CONFIRM THESE IDs
