@@ -38,7 +38,6 @@ export const Booking: CollectionConfig = {
         const bookingId =
           req.routeParams && 'bookingId' in req.routeParams && req.routeParams.bookingId
 
-        // This is not suppossed to happen, but just in case
         if (!bookingId || typeof bookingId !== 'string') {
           return Response.json(
             {
@@ -48,68 +47,71 @@ export const Booking: CollectionConfig = {
           )
         }
 
-        const bookings = await req.payload.find({
-          collection: 'bookings',
-          where: {
-            and: [
-              {
-                id: {
-                  equals: bookingId,
-                },
-              },
-              {
-                customer: {
-                  equals: req.user.id,
-                },
-              },
-            ],
-          },
-          limit: 1,
-          pagination: false,
-        })
-
-        if (bookings.docs.length === 0) {
-          return Response.json(
-            {
-              message: 'Booking not found',
-            },
-            { status: 404 },
-          )
-        }
-
-        const booking = bookings.docs[0]
-
-        if (!booking) {
-          return Response.json(
-            {
-              message: 'Booking not found',
-            },
-            { status: 404 },
-          )
-        }
-
-        if (booking.token) {
-          return Response.json({
-            token: booking.token,
+        try {
+          // Use findOneAndUpdate to handle concurrent requests
+          const booking = await req.payload.findByID({
+            collection: 'bookings',
+            id: bookingId,
           })
-        }
 
-        const token = generateJwtToken({
-          bookingId: booking.id,
-          customerId:
-            typeof booking.customer === 'string' ? booking.customer : booking.customer?.id,
-        })
+          if (!booking) {
+            return Response.json(
+              {
+                message: 'Booking not found',
+              },
+              { status: 404 },
+            )
+          }
 
-        await req.payload.update({
-          collection: 'bookings',
-          id: bookingId,
-          data: {
+          // Check if user is authorized
+          if (
+            typeof booking.customer === 'string'
+              ? booking.customer !== req.user.id
+              : booking.customer?.id !== req.user.id
+          ) {
+            return Response.json(
+              {
+                message: 'Unauthorized',
+              },
+              { status: 401 },
+            )
+          }
+
+          // If booking already has a token, return it
+          if (booking.token) {
+            return Response.json({
+              token: booking.token,
+            })
+          }
+
+          // Generate new token
+          const token = generateJwtToken({
+            bookingId: booking.id,
+            customerId:
+              typeof booking.customer === 'string' ? booking.customer : booking.customer?.id,
+          })
+
+          // Update booking with new token
+          await req.payload.update({
+            collection: 'bookings',
+            id: bookingId,
+            data: {
+              token,
+            },
+          })
+
+          return Response.json({
             token,
-          },
-        })
-        return Response.json({
-          token,
-        })
+          })
+        } catch (error) {
+          console.error('Error generating token:', error)
+          return Response.json(
+            {
+              message: 'Failed to generate token',
+            },
+            { status: 500 },
+          )
+        }
       },
     },
 
