@@ -15,7 +15,7 @@ type FormValues = {
   password: string
 }
 
-export default function LoginPage() {
+function LoginForm() {
   const form = useForm<FormValues>({
     defaultValues: {
       email: '',
@@ -24,13 +24,9 @@ export default function LoginPage() {
   })
 
   const router = useRouter()
-
   const searchParams = useSearchParams()
-
   const next = searchParams.get('next')
-
   const [error, setError] = React.useState<string | null>(null)
-
   const { handleAuthChange } = useUserContext()
   const { isSubscribed, isLoading: isSubscriptionLoading } = useSubscription()
 
@@ -106,5 +102,13 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <React.Suspense fallback={<div>Loading...</div>}>
+      <LoginForm />
+    </React.Suspense>
   )
 }
