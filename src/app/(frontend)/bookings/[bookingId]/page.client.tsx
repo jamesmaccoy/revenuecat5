@@ -3,7 +3,7 @@
 import { Media } from '@/components/Media'
 import { Booking, User } from '@/payload-types'
 import { formatDateTime } from '@/utilities/formatDateTime'
-import { DeleteIcon, PlusCircleIcon, TrashIcon, UserIcon } from 'lucide-react'
+import { PlusCircleIcon, TrashIcon, UserIcon } from 'lucide-react'
 import React from 'react'
 import InviteUrlDialog from './_components/invite-url-dialog'
 import { Button } from '@/components/ui/button'
@@ -36,11 +36,11 @@ export default function BookingDetailsClientPage({ data, user }: Props) {
   return (
     <div className="container my-10">
       {data && 'post' in data && typeof data?.post !== 'string' ? (
-        <div className="flex items-start gap-10">
-          <div className="max-w-[450px] rounded-md overflow-hidden">
+        <div className="flex items-start flex-col md:flex-row gap-5 md:gap-10">
+          <div className="md:max-w-[450px] w-full rounded-md overflow-hidden">
             {!!data?.post.meta?.image && <Media resource={data?.post.meta?.image || undefined} />}
           </div>
-          <div className="py-5">
+          <div className="md:py-5 py-3">
             <h1 className="text-4xl mb-3 font-bold">{data?.post.title}</h1>
 
             <p className="text-lg font-medium">
