@@ -6,7 +6,7 @@ import type { User } from './payload-types' // Ensure User type includes 'role' 
 const PROTECTED_PATHS = ['/admin', '/join']
 
 // Paths that are always allowed
-const PUBLIC_PATHS = ['/subscribe', '/register']
+const PUBLIC_PATHS = ['/login', '/subscribe', '/register']
 
 // Define an array of professional entitlement IDs
 const PROFESSIONAL_ENTITLEMENT_IDS = ['pro', 'simpleplek_admin'] // CONFIRM THESE IDs
@@ -33,9 +33,9 @@ export async function middleware(request: NextRequest) {
   console.log('Auth cookie present:', !!authCookie?.value)
 
   if (!authCookie?.value) {
-    console.log('No auth cookie found, redirecting to subscribe')
+    console.log('No auth cookie found, redirecting to login')
     if (PROTECTED_PATHS.some((path) => pathname.startsWith(path))) {
-        return NextResponse.redirect(new URL('/subscribe', request.url))
+        return NextResponse.redirect(new URL('/login', request.url))
     }
     return NextResponse.next() // Allow non-protected paths if no auth cookie (e.g. homepage)
   }
@@ -50,7 +50,7 @@ export async function middleware(request: NextRequest) {
   } catch (error) {
     console.error('Error decoding auth token:', error)
     if (PROTECTED_PATHS.some((path) => pathname.startsWith(path))) {
-        return NextResponse.redirect(new URL('/subscribe', request.url))
+        return NextResponse.redirect(new URL('/login', request.url))
     }
     return NextResponse.next()
   }

@@ -16,7 +16,7 @@ export default function JoinPage() {
   React.useEffect(() => {
     if (!isLoading && !error) {
       if (!currentUser) {
-        router.push('/subscribe')
+        router.push('/login')
       } else if (!isSubscribed) {
         router.push('/subscribe')
       }

@@ -3,7 +3,6 @@ import { getPayload } from "payload"
 import config from "@payload-config"
 import { NextResponse } from "next/server"
 import { getMeUser } from "@/utilities/getMeUser"
-import { generateJwtToken } from "@/utilities/token"
 
 export async function POST(request: Request) {
   try {
@@ -24,23 +23,19 @@ export async function POST(request: Request) {
     // Create a title for the booking
     const title = `Booking for ${currentUser.user.name || currentUser.user.email} - ${fromDate.toLocaleDateString()}`
     
-    // Generate a token for the booking
-    const token = generateJwtToken({
-      bookingId: null, // Will be set after booking creation
-      customerId: currentUser.user.id,
-    })
-    
     // Create booking in Payload CMS using your actual schema fields
     const booking = await payload.create({
       collection: "bookings",
       data: {
         title: title,
         customer: currentUser.user.id,
-        post: bookingData.postId,
-        paymentStatus: "paid",
+        post: bookingData.postId, // You'll need to pass this from the client
+        paymentStatus: "paid", // Set to paid since payment was successful
         fromDate: fromDate.toISOString(),
         toDate: toDate.toISOString(),
-        token: token,
+        // If you want to add guests, you can do so here
+        // guests: bookingData.guestIds || [],
+        // The slug will be auto-generated from the title
       },
     })
     

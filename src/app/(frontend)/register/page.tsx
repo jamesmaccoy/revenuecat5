@@ -1,4 +1,4 @@
-import React, { Suspense } from 'react'
+import React from 'react'
 import RegisterPage from './page.client'
 import { Metadata } from 'next'
 
@@ -8,9 +8,5 @@ export const metadata: Metadata = {
 }
 
 export default function Page() {
-  return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <RegisterPage />
-    </Suspense>
-  )
+  return <RegisterPage />
 }

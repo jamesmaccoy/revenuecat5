@@ -12,7 +12,8 @@ import {
 import { Booking } from '@/payload-types'
 import { formatDateTime } from '@/utilities/formatDateTime'
 
-import { CheckIcon, Loader2Icon } from 'lucide-react'
+import { CheckIcon, CircleAlert, Loader2Icon } from 'lucide-react'
+import Link from 'next/link'
 import { notFound, useRouter } from 'next/navigation'
 import React from 'react'
 
@@ -34,11 +35,12 @@ export default function InviteClientPage({ booking, tokenPayload, token }: Props
   const router = useRouter()
 
   const [isLoading, setIsLoading] = React.useState(false)
+  const [error, setError] = React.useState<string | null>(null)
 
   const handleInviteAccept = async () => {
     try {
       setIsLoading(true)
-      const data = await fetch(`/api/bookings/${tokenPayload.bookingId}/accept-invite/${token}`, {
+      const res = await fetch(`/api/bookings/${tokenPayload.bookingId}/accept-invite/${token}`, {
         method: 'POST',
         credentials: 'include',
         headers: {
@@ -46,8 +48,11 @@ export default function InviteClientPage({ booking, tokenPayload, token }: Props
         },
       })
 
-      if (!data.ok) {
-        console.error('Error accepting invite:', data.statusText)
+      const data = await res.json()
+
+      if (!res.ok) {
+        console.error('Error accepting invite:', res.statusText)
+        setError(data.message || 'Unknown error')
         return
       }
 
@@ -57,6 +62,23 @@ export default function InviteClientPage({ booking, tokenPayload, token }: Props
     } finally {
       setIsLoading(false)
     }
+  }
+
+  if (error) {
+    return (
+      <div className="border-2 flex items-center gap-6 mt-10 flex-col border-red-500 bg-red-100 max-w-[450px] w-full mx-auto p-6 rounded-xl ">
+        <div>
+          <CircleAlert className="size-8" />
+        </div>
+        <div className="text-center">
+          <h2 className="text-lg font-medium tracking-tight">Something went wrong</h2>
+          <p className="tracking-wide ">{error}</p>
+        </div>
+        <Button asChild variant="default" className="w-full">
+          <Link href={'/'}>Return Home</Link>
+        </Button>
+      </div>
+    )
   }
 
   return (

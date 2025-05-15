@@ -14,7 +14,7 @@ export default async function BookingConfirmationPage({
   const currentUser = await getMeUser()
   
   if (!currentUser) {
-    return redirect("/subscribe")
+    return redirect("/login")
   }
   
   const payload = await getPayload({ config })

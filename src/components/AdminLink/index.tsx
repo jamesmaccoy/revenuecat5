@@ -19,7 +19,7 @@ export const AdminLink: React.FC<AdminLinkProps> = ({ children, className }) => 
     e.preventDefault()
     
     if (!currentUser) {
-      router.push('/subscribe')
+      router.push('/login')
       return
     }
 
