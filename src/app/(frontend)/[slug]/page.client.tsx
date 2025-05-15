@@ -10,8 +10,12 @@ import { RenderHero } from '@/heros/RenderHero'
 import { RenderBlocks } from '@/blocks/RenderBlocks'
 import { LivePreviewListener } from '@/components/LivePreviewListener'
 import { PayloadRedirects } from '@/components/PayloadRedirects'
-import DatePicker from 'react-datepicker'
-import 'react-datepicker/dist/react-datepicker.css'
+import { Calendar } from "@/components/ui/calendar"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Button } from "@/components/ui/button"
+import { CalendarIcon } from "lucide-react"
+import { format } from "date-fns"
+import { cn } from "@/lib/utils"
 
 interface PageClientProps {
   page: PageType | null
@@ -98,27 +102,55 @@ const PageClient: React.FC<PageClientProps> = ({ page, draft, url }) => {
           <div className="flex flex-col space-y-2 w-full max-w-md">
             <label className="text-gray-700 font-medium">Stay Length</label>
             <div className="flex space-x-2">
-              <DatePicker
-                selected={startDate}
-                onChange={(date: Date) => setStartDate(date)}
-                selectsStart
-                startDate={startDate}
-                endDate={endDate}
-                minDate={new Date()}
-                className="border border-gray-300 rounded-lg px-3 py-2 text-gray-800 w-full"
-                dateFormat="MMM d, yyyy"
-              />
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant={"outline"}
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !startDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {startDate ? format(startDate, "PPP") : <span>Pick a date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={startDate || undefined}
+                    onSelect={(date) => setStartDate(date || null)}
+                    initialFocus
+                    disabled={(date) => date < new Date()}
+                  />
+                </PopoverContent>
+              </Popover>
+
               <span className="text-gray-500 self-center">to</span>
-              <DatePicker
-                selected={endDate}
-                onChange={(date: Date) => setEndDate(date)}
-                selectsEnd
-                startDate={startDate}
-                endDate={endDate}
-                minDate={startDate ?? undefined}
-                className="border border-gray-300 rounded-lg px-3 py-2 text-gray-800 w-full"
-                dateFormat="MMM d, yyyy"
-              />
+
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant={"outline"}
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !endDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {endDate ? format(endDate, "PPP") : <span>Pick a date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={endDate || undefined}
+                    onSelect={(date) => setEndDate(date || null)}
+                    initialFocus
+                    disabled={(date) => !startDate || date < startDate}
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
 
@@ -148,8 +180,7 @@ const PageClient: React.FC<PageClientProps> = ({ page, draft, url }) => {
               }
 
               // Navigate to join page with parameters
-// In the "Request Availability" button click handler
-router.push(`/join?total=${rate}&duration=${duration}&postId=${page?.id || ''}`)
+              router.push(`/join?total=${rate}&duration=${duration}&postId=${page?.id || ''}`)
             }}
           >
             Request Availability

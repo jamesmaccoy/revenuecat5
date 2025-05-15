@@ -25,7 +25,7 @@ type Props = {
 
 const BookingCard: FC<Props> = ({ booking }) => {
   return (
-    <Link key={booking.id} href={`/admin/collections/bookings/${booking.id}`}>
+    <Link key={booking.id} href={`/bookings/${booking.id}`}>
       <div className="flex flex-col gap-4 border border-border bg-card h-full">
         <div className="relative w-full">
           {!booking.meta?.image && <div>No Image</div>}

@@ -6,13 +6,20 @@ import type { User } from "@/payload-types"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useRevenueCat } from "@/providers/RevenueCat"
-import { Purchases, type Package, type PurchasesError, ErrorCode } from "@revenuecat/purchases-js"
+import { Purchases, type Package, type PurchasesError, ErrorCode, type Product } from "@revenuecat/purchases-js"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Loader2 } from 'lucide-react'
 
 // Add type for RevenueCat error with code
 interface RevenueCatError extends Error {
   code?: ErrorCode;
+}
+
+// Extend Product type to include price
+interface RevenueCatProduct extends Product {
+  price?: number;
+  priceString?: string;
+  currencyCode?: string;
 }
 
 export default function JoinClient({ bookingTotal = 'N/A', bookingDuration = 'N/A' }) {
@@ -43,27 +50,109 @@ export default function JoinClient({ bookingTotal = 'N/A', bookingDuration = 'N/
   const [selectedPackage, setSelectedPackage] = useState<string | null>(null)
   const [selectedDuration, setSelectedDuration] = useState<number>(1)
   const [isWineSelected, setIsWineSelected] = useState(false)
+  const [packagePrice, setPackagePrice] = useState<number | null>(null)
 
-  const packageDetails = {
-    per_night: {
+  // Define package tiers with their thresholds and multipliers
+  const packageTiers = [
+    {
+      id: "per_night",
       title: "Per Night",
       description: "Standard nightly rate",
-      priceMultiplier: 1,
       minNights: 1,
-      maxNights: 3,
+      maxNights: 1,
+      multiplier: 1.0,
       features: [
         "Standard accommodation",
         "Basic amenities",
         "Self-service"
-      ],
+      ]
+    },
+    {
+      id: "three_nights",
+      title: "3 Night Package",
+      description: "Special rate for 3+ nights",
+      minNights: 2,
+      maxNights: 3,
+      multiplier: 0.9,
+      features: [
+        "Standard accommodation",
+        "Basic amenities",
+        "Self-service",
+        "10% discount on total"
+      ]
+    },
+    {
+      id: "Weekly",
+      title: "Weekly Package",
+      description: "Best value for week-long stays",
+      minNights: 4,
+      maxNights: 7,
+      multiplier: 0.8,
+      features: [
+        "Standard accommodation",
+        "Basic amenities",
+        "Self-service",
+        "20% discount on total"
+      ]
+    },
+    {
+      id: "2Xweekly",
+      title: "2X Weekly Package",
+      description: "Extended stay special rate",
+      minNights: 8,
+      maxNights: 13,
+      multiplier: 0.7,
+      features: [
+        "Standard accommodation",
+        "Basic amenities",
+        "Self-service",
+        "30% discount on total",
+        "Extended stay benefits"
+      ]
+    },
+    {
+      id: "weekX3",
+      title: "3 Week Package",
+      description: "Long-term stay special rate",
+      minNights: 14,
+      maxNights: 28,
+      multiplier: 0.5,
+      features: [
+        "Standard accommodation",
+        "Basic amenities",
+        "Self-service",
+        "50% discount on total",
+        "Extended stay benefits",
+        "Priority booking for future stays"
+      ]
+    },
+    {
+      id: "monthly",
+      title: "Monthly Package",
+      description: "Extended stay rate",
+      minNights: 29,
+      maxNights: 365,
+      multiplier: 0.7,
+      features: [
+        "Standard accommodation",
+        "Basic amenities",
+        "Self-service",
+        "30% discount on total"
+      ]
+    }
+  ]
+
+  // Create packageDetails from packageTiers
+  const packageDetails = {
+    per_night: {
+      ...packageTiers[0],
       revenueCatId: "per_night"
     },
     per_night_luxury: {
+      ...packageTiers[0],
       title: "Luxury Night",
       description: "Premium nightly rate",
-      priceMultiplier: 1.5,
-      minNights: 1,
-      maxNights: 3,
+      multiplier: 1.5,
       features: [
         "Premium accommodation",
         "Enhanced amenities",
@@ -72,25 +161,14 @@ export default function JoinClient({ bookingTotal = 'N/A', bookingDuration = 'N/
       revenueCatId: "per_night_luxury"
     },
     three_nights: {
-      title: "3 Night Package",
-      description: "Special rate for 3+ nights",
-      priceMultiplier: 0.9,
-      minNights: 3,
-      maxNights: 7,
-      features: [
-        "Standard accommodation",
-        "Basic amenities",
-        "Self-service",
-        "10% discount on total"
-      ],
+      ...packageTiers[1],
       revenueCatId: "3nights"
     },
     hosted3nights: {
+      ...packageTiers[1],
       title: "Hosted 3 Nights",
       description: "Premium 3-night experience",
-      priceMultiplier: 1.4,
-      minNights: 3,
-      maxNights: 7,
+      multiplier: 1.4,
       features: [
         "Premium accommodation",
         "Dedicated host",
@@ -99,26 +177,15 @@ export default function JoinClient({ bookingTotal = 'N/A', bookingDuration = 'N/
       ],
       revenueCatId: "hosted3nights"
     },
-    weekly: {
-      title: "Weekly Package",
-      description: "Best value for week-long stays",
-      priceMultiplier: 0.8,
-      minNights: 7,
-      maxNights: 29,
-      features: [
-        "Standard accommodation",
-        "Basic amenities",
-        "Self-service",
-        "20% discount on total"
-      ],
+    Weekly: {
+      ...packageTiers[2],
       revenueCatId: "Weekly"
     },
     hosted7nights: {
+      ...packageTiers[2],
       title: "Hosted Weekly",
       description: "Premium week-long experience",
-      priceMultiplier: 1.3,
-      minNights: 7,
-      maxNights: 29,
+      multiplier: 1.3,
       features: [
         "Premium accommodation",
         "Dedicated host",
@@ -128,24 +195,22 @@ export default function JoinClient({ bookingTotal = 'N/A', bookingDuration = 'N/
       ],
       revenueCatId: "hosted7nights"
     },
+    "2Xweekly": {
+      ...packageTiers[3],
+      revenueCatId: "2Xweekly"
+    },
+    weekX3: {
+      ...packageTiers[4],
+      revenueCatId: "weekX3"
+    },
     monthly: {
-      title: "Monthly Package",
-      description: "Extended stay rate",
-      priceMultiplier: 0.7,
-      minNights: 29,
-      maxNights: 365,
-      features: [
-        "Standard accommodation",
-        "Basic amenities",
-        "Self-service",
-        "30% discount on total"
-      ],
+      ...packageTiers[5],
       revenueCatId: "monthly"
     },
     wine: {
       title: "Wine Package",
       description: "Includes wine tasting and selection platters",
-      priceMultiplier: 1.5,
+      multiplier: 1.5,
       minNights: 1,
       maxNights: 365,
       features: [
@@ -165,37 +230,149 @@ export default function JoinClient({ bookingTotal = 'N/A', bookingDuration = 'N/
     const duration = Number(bookingDuration)
     let packageId = "per_night"
 
-    // If wine package is selected, use the corresponding luxury/hosted package
+    console.log("Selecting package for duration:", duration)
+
+    // If wine package is selected, use the corresponding luxury package
     if (isWineSelected) {
       if (duration >= 29) {
-        packageId = "monthly" // Keep monthly as is for wine
-      } else if (duration >= 4) {
+        packageId = "monthly"
+      } else if (duration >= 14) {
         packageId = "hosted7nights"
-      } else if (duration >= 2) {
+      } else if (duration >= 3) {
         packageId = "hosted3nights"
       } else {
         packageId = "per_night_luxury"
       }
     } else {
-      // Standard package selection
-      if (duration >= 29) {
-        packageId = "monthly"
-      } else if (duration >= 4) {
-        packageId = "weekly"
-      } else if (duration >= 2) {
-        packageId = "three_nights"
+      // Find the appropriate package tier based on duration
+      const selectedTier = packageTiers.find(tier => 
+        duration >= tier.minNights && duration <= tier.maxNights
+      )
+      
+      if (selectedTier) {
+        packageId = selectedTier.id
+        console.log("Selected tier:", selectedTier)
+      } else {
+        // Fallback to per night if no tier matches
+        packageId = "per_night"
+        console.log("No tier matched, defaulting to per_night")
       }
     }
 
+    console.log("Selected package ID:", packageId)
     setSelectedPackage(packageId)
     setSelectedDuration(duration)
   }, [bookingDuration, isWineSelected])
 
+  // Load RevenueCat offerings when initialized
+  useEffect(() => {
+    if (isInitialized) {
+      loadOfferings()
+    }
+  }, [isInitialized])
+
+  const loadOfferings = async () => {
+    setLoadingOfferings(true)
+    try {
+      const fetchedOfferings = await Purchases.getSharedInstance().getOfferings()
+      console.log("All Offerings:", fetchedOfferings.all)
+      
+      // Get the per_night offering specifically
+      const perNightOffering = fetchedOfferings.all["per_night"]
+      
+      if (perNightOffering && perNightOffering.availablePackages.length > 0) {
+        console.log("Per Night packages:", perNightOffering.availablePackages.map(pkg => ({
+          identifier: pkg.webBillingProduct?.identifier,
+          product: pkg.webBillingProduct,
+          priceString: pkg.webBillingProduct?.priceString,
+          price: pkg.webBillingProduct?.price
+        })))
+        setOfferings(perNightOffering.availablePackages)
+      } else {
+        console.warn("No packages found in per_night offering")
+        setOfferings([])
+      }
+    } catch (err) {
+      setPaymentError("Failed to load booking options")
+      console.error("Error loading offerings:", err)
+    } finally {
+      setLoadingOfferings(false)
+    }
+  }
+
+  // Update package price when package or duration changes
+  useEffect(() => {
+    if (!selectedPackage || !offerings.length) return
+
+    const selectedPackageDetails = packageDetails[selectedPackage]
+    if (!selectedPackageDetails) return
+
+    const packageToUse = offerings.find(pkg => 
+      pkg.webBillingProduct?.identifier === selectedPackageDetails.revenueCatId
+    )
+
+    console.log("Selected package details:", {
+      packageId: selectedPackage,
+      revenueCatId: selectedPackageDetails.revenueCatId,
+      foundPackage: packageToUse?.webBillingProduct?.identifier,
+      priceString: packageToUse?.webBillingProduct?.priceString,
+      price: packageToUse?.webBillingProduct?.price,
+      bookingTotal
+    })
+
+    if (packageToUse?.webBillingProduct) {
+      const product = packageToUse.webBillingProduct as RevenueCatProduct
+      if (product.price) {
+        const basePrice = Number(product.price)
+        const multiplier = selectedPackageDetails.multiplier
+        const calculatedPrice = basePrice * multiplier
+        console.log("Using RevenueCat price:", {
+          basePrice,
+          multiplier,
+          calculatedPrice
+        })
+        setPackagePrice(calculatedPrice)
+      } else {
+        // Fallback to local calculation if RevenueCat price is not available
+        const basePrice = Number(bookingTotal)
+        const multiplier = selectedPackageDetails.multiplier
+        const calculatedPrice = basePrice * multiplier
+        console.log("Using local price calculation:", {
+          basePrice,
+          multiplier,
+          calculatedPrice
+        })
+        setPackagePrice(calculatedPrice)
+      }
+    } else {
+      // Fallback to local calculation if package is not found
+      const basePrice = Number(bookingTotal)
+      const multiplier = selectedPackageDetails.multiplier
+      const calculatedPrice = basePrice * multiplier
+      console.log("Using fallback price calculation:", {
+        basePrice,
+        multiplier,
+        calculatedPrice
+      })
+      setPackagePrice(calculatedPrice)
+    }
+  }, [selectedPackage, offerings, bookingTotal])
+
   const calculateTotalPrice = () => {
-    if (!bookingTotal || !selectedPackage) return null
-    const basePrice = Number(bookingTotal)
-    const multiplier = packageDetails[selectedPackage]?.priceMultiplier || 1
-    return basePrice * multiplier * selectedDuration
+    if (!packagePrice || !selectedDuration) return null
+    const total = packagePrice * selectedDuration
+    console.log("Calculating total price:", {
+      packagePrice,
+      selectedDuration,
+      total
+    })
+    return total
+  }
+
+  // Format price with proper decimal places
+  const formatPrice = (price: number | null) => {
+    if (price === null) return "N/A"
+    return `R${price.toFixed(2)}`
   }
 
   useEffect(() => {
@@ -217,40 +394,6 @@ export default function JoinClient({ bookingTotal = 'N/A', bookingDuration = 'N/
 
     fetchGuests()
   }, [])
-
-  // Load RevenueCat offerings when initialized
-  useEffect(() => {
-    if (isInitialized) {
-      loadOfferings()
-    }
-  }, [isInitialized])
-
-  const loadOfferings = async () => {
-    setLoadingOfferings(true)
-    try {
-      const fetchedOfferings = await Purchases.getSharedInstance().getOfferings()
-      console.log("All Offerings:", fetchedOfferings.all)
-      
-      // Get the per_night offering specifically
-      const perNightOffering = fetchedOfferings.all["per_night"]
-      
-      if (perNightOffering && perNightOffering.availablePackages.length > 0) {
-        console.log("Per Night packages:", perNightOffering.availablePackages.map(pkg => ({
-          identifier: pkg.webBillingProduct?.identifier,
-          product: pkg.webBillingProduct
-        })))
-        setOfferings(perNightOffering.availablePackages)
-      } else {
-        console.warn("No packages found in per_night offering")
-        setOfferings([])
-      }
-    } catch (err) {
-      setPaymentError("Failed to load booking options")
-      console.error("Error loading offerings:", err)
-    } finally {
-      setLoadingOfferings(false)
-    }
-  }
 
   const handleBooking = async () => {
     setPaymentLoading(true)
@@ -444,7 +587,7 @@ export default function JoinClient({ bookingTotal = 'N/A', bookingDuration = 'N/
             </ul>
             <div className="flex justify-between items-center">
               <span className="text-2xl font-bold">
-                R{selectedPackage ? Number(bookingTotal) * (packageDetails[selectedPackage]?.priceMultiplier || 1) : "N/A"}/night
+                {formatPrice(packagePrice)}/night
               </span>
             </div>
           </div>
@@ -471,7 +614,9 @@ export default function JoinClient({ bookingTotal = 'N/A', bookingDuration = 'N/
               ))}
             </ul>
             <div className="flex justify-between items-center">
-              <span className="text-2xl font-bold">R{Number(bookingTotal) * 1.5}/night</span>
+              <span className="text-2xl font-bold">
+                {formatPrice(packagePrice ? packagePrice * 1.5 : null)}/night
+              </span>
               <div className={`w-5 h-5 rounded-full border-2 ${
                 isWineSelected
                   ? "border-primary bg-primary" 
@@ -494,7 +639,7 @@ export default function JoinClient({ bookingTotal = 'N/A', bookingDuration = 'N/
         <div className="flex justify-between items-center mb-4">
           <span className="text-muted-foreground">Rate per night:</span>
           <span className="font-medium">
-            R{selectedPackage ? Number(bookingTotal) * (packageDetails[selectedPackage]?.priceMultiplier || 1) : "N/A"}
+            {formatPrice(packagePrice)}
           </span>
         </div>
         <div className="flex justify-between items-center mb-4">
@@ -504,7 +649,7 @@ export default function JoinClient({ bookingTotal = 'N/A', bookingDuration = 'N/
         <div className="flex justify-between items-center mb-6">
           <span className="text-muted-foreground">Total:</span>
           <span className="text-2xl font-bold">
-            R{calculateTotalPrice() || "N/A"}
+            {formatPrice(calculateTotalPrice())}
           </span>
         </div>
 
@@ -526,7 +671,7 @@ export default function JoinClient({ bookingTotal = 'N/A', bookingDuration = 'N/
           ) : !selectedPackage ? (
             "Please Select a Package"
           ) : (
-            `Complete Booking - R${calculateTotalPrice() || "N/A"}`
+            `Complete Booking - ${formatPrice(calculateTotalPrice())}`
           )}
         </Button>
         
