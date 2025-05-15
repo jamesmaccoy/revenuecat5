@@ -9,6 +9,7 @@ import { useRevenueCat } from "@/providers/RevenueCat"
 import { Purchases, type Package, type PurchasesError, ErrorCode, type Product } from "@revenuecat/purchases-js"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Loader2 } from 'lucide-react'
+import { Switch } from "@/components/ui/switch"
 
 // Add type for RevenueCat error with code
 interface RevenueCatError extends Error {
@@ -593,18 +594,18 @@ export default function JoinClient({ bookingTotal = 'N/A', bookingDuration = 'N/
           </div>
 
           {/* Wine Package Add-on */}
-          <div 
-            className={`p-6 rounded-lg border-2 cursor-pointer transition-all ${
-              isWineSelected
-                ? "border-primary bg-primary/5" 
-                : "border-border hover:border-primary/50"
-            }`}
-            onClick={() => {
-              setIsWineSelected(!isWineSelected)
-            }}
-          >
-            <h3 className="text-xl font-semibold mb-2">{packageDetails.wine.title}</h3>
-            <p className="text-muted-foreground mb-4">{packageDetails.wine.description}</p>
+          <div className="p-6 rounded-lg border-2 border-border hover:border-primary/50 transition-all">
+            <div className="flex justify-between items-start mb-4">
+              <div>
+                <h3 className="text-xl font-semibold mb-2">{packageDetails.wine.title}</h3>
+                <p className="text-muted-foreground">{packageDetails.wine.description}</p>
+              </div>
+              <Switch
+                id="wine-package"
+                checked={isWineSelected}
+                onCheckedChange={setIsWineSelected}
+              />
+            </div>
             <ul className="mb-4 space-y-2">
               {packageDetails.wine.features.map((feature, index) => (
                 <li key={index} className="flex items-center text-sm">
@@ -613,16 +614,6 @@ export default function JoinClient({ bookingTotal = 'N/A', bookingDuration = 'N/
                 </li>
               ))}
             </ul>
-            <div className="flex justify-between items-center">
-              <span className="text-2xl font-bold">
-                {formatPrice(packagePrice ? packagePrice * 1.5 : null)}/night
-              </span>
-              <div className={`w-5 h-5 rounded-full border-2 ${
-                isWineSelected
-                  ? "border-primary bg-primary" 
-                  : "border-border"
-              }`} />
-            </div>
           </div>
         </div>
       </div>
