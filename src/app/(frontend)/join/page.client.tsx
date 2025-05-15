@@ -285,8 +285,8 @@ export default function JoinClient({ bookingTotal = 'N/A', bookingDuration = 'N/
         console.log("Per Night packages:", perNightOffering.availablePackages.map(pkg => ({
           identifier: pkg.webBillingProduct?.identifier,
           product: pkg.webBillingProduct,
-          priceString: pkg.webBillingProduct?.priceString,
-          price: pkg.webBillingProduct?.price
+          priceString: (pkg.webBillingProduct as RevenueCatProduct)?.priceString,
+          price: (pkg.webBillingProduct as RevenueCatProduct)?.price
         })))
         setOfferings(perNightOffering.availablePackages)
       } else {
@@ -316,8 +316,8 @@ export default function JoinClient({ bookingTotal = 'N/A', bookingDuration = 'N/
       packageId: selectedPackage,
       revenueCatId: selectedPackageDetails.revenueCatId,
       foundPackage: packageToUse?.webBillingProduct?.identifier,
-      priceString: packageToUse?.webBillingProduct?.priceString,
-      price: packageToUse?.webBillingProduct?.price,
+      priceString: (packageToUse?.webBillingProduct as RevenueCatProduct)?.priceString,
+      price: (packageToUse?.webBillingProduct as RevenueCatProduct)?.price,
       bookingTotal
     })
 
