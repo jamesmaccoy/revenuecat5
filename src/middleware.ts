@@ -35,7 +35,7 @@ export async function middleware(request: NextRequest) {
   if (!authCookie?.value) {
     console.log('No auth cookie found, redirecting to login')
     if (PROTECTED_PATHS.some((path) => pathname.startsWith(path))) {
-        return NextResponse.redirect(new URL('/subscribe', request.url))
+        return NextResponse.redirect(new URL('/login', request.url))
     }
     return NextResponse.next() // Allow non-protected paths if no auth cookie (e.g. homepage)
   }
@@ -50,7 +50,7 @@ export async function middleware(request: NextRequest) {
   } catch (error) {
     console.error('Error decoding auth token:', error)
     if (PROTECTED_PATHS.some((path) => pathname.startsWith(path))) {
-        return NextResponse.redirect(new URL('/subscribe', request.url))
+        return NextResponse.redirect(new URL('/login', request.url))
     }
     return NextResponse.next()
   }

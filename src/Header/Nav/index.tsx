@@ -33,8 +33,8 @@ export const HeaderNav: React.FC<{ data: HeaderType }> = ({ data }) => {
         <SearchIcon className="w-5 text-primary" />
       </Link>
       {!currentUser ? (
-        <Link className={buttonVariants({})} href={'/subscribe'}>
-          Subscribe
+        <Link className={buttonVariants({})} href={'/'}>
+          My Account
         </Link>
       ) : (
         <div className="font-medium text-sm text-primary">Hello, {currentUser.name}</div>
