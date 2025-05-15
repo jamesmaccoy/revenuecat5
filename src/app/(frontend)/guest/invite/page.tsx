@@ -118,17 +118,38 @@ export default async function GuestInvite({ searchParams }: { searchParams: Sear
 }
 
 const fetchTokenData = async (token: string) => {
-  const tokenData = await fetch(
-    `${process.env.NEXT_PUBLIC_SERVER_URL}/api/bookings/token/${token}`,
-    {
-      method: 'GET',
-      credentials: 'include',
-      headers: new Headers(await headers()),
-    },
-  )
+  const payload = await getPayload({ config: configPromise })
+  
+  try {
+    const response = await payload.find({
+      collection: 'bookings',
+      where: {
+        token: {
+          equals: token,
+        },
+      },
+      limit: 1,
+    })
 
-  const tokenDataJson = await tokenData.json()
-  return tokenDataJson
+    if (response.docs.length === 0) {
+      return null
+    }
+
+    const booking = response.docs[0]
+    const customerId = typeof booking.customer === 'string' ? booking.customer : booking.customer?.id
+    
+    if (!customerId) {
+      return null
+    }
+
+    return {
+      bookingId: booking.id,
+      customerId,
+    }
+  } catch (error) {
+    console.error('Error fetching token data:', error)
+    return null
+  }
 }
 
 const fetchBookingDetails = async (bookingId: string, token: string) => {
