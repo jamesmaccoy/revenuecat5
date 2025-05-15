@@ -1,4 +1,5 @@
 import LoginPage from './page.client'
+import { Suspense } from 'react'
 
 // You can now add Next.js metadata here for SEO
 export const metadata = {
@@ -7,5 +8,9 @@ export const metadata = {
 }
 
 export default function Page() {
-  return <LoginPage />
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <LoginPage />
+    </Suspense>
+  )
 }
