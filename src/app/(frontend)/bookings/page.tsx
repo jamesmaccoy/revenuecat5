@@ -16,7 +16,7 @@ export default async function Bookings() {
   const { user } = await getMeUser()
 
   if (!user) {
-    redirect('/login?next=/bookings')
+    redirect('/subscribe?redirect=/bookings')
   }
 
   const [upcomingBookings, pastBookings] = await Promise.all([
