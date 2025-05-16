@@ -10,10 +10,6 @@ import { Purchases, type Package, type PurchasesError, ErrorCode, type Product }
 import { useRouter, useSearchParams } from "next/navigation"
 import { Loader2 } from 'lucide-react'
 import { Switch } from "@/components/ui/switch"
-<<<<<<< Updated upstream
-import { Label } from "@/components/ui/label"
-=======
->>>>>>> Stashed changes
 
 // Add type for RevenueCat error with code
 interface RevenueCatError extends Error {
