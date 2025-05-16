@@ -1,47 +1,42 @@
 // app/api/bookings/route.ts
-import { getPayload } from "payload"
-import config from "@payload-config"
-import { NextResponse } from "next/server"
-import { getMeUser } from "@/utilities/getMeUser"
+import { NextResponse } from 'next/server'
+import { getPayload } from 'payload'
+import { getMeUser } from '@/utilities/getMeUser'
+import config from '@payload-config'
+import type { Booking } from '@/payload-types'
 
-export async function POST(request: Request) {
+export async function POST(req: Request) {
   try {
     const currentUser = await getMeUser()
-    
     if (!currentUser) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-    
+
     const payload = await getPayload({ config })
-    const bookingData = await request.json()
+    const data = await req.json()
     
-    // Calculate the number of days between fromDate and toDate
-    const fromDate = new Date(bookingData.fromDate || new Date())
-    const toDate = new Date(bookingData.toDate || new Date())
-    toDate.setDate(toDate.getDate() + parseInt(bookingData.duration))
-    
-    // Create a title for the booking
-    const title = `Booking for ${currentUser.user.name || currentUser.user.email} - ${fromDate.toLocaleDateString()}`
-    
-    // Create booking in Payload CMS using your actual schema fields
+    const { postId, fromDate, toDate } = data
+
+    // Create booking in Payload CMS
     const booking = await payload.create({
       collection: "bookings",
       data: {
-        title: title,
+        title: `Booking for ${currentUser.user.email}`,
+        post: postId,
+        fromDate,
+        toDate,
         customer: currentUser.user.id,
-        post: bookingData.postId, // You'll need to pass this from the client
-        paymentStatus: "paid", // Set to paid since payment was successful
-        fromDate: fromDate.toISOString(),
-        toDate: toDate.toISOString(),
-        // If you want to add guests, you can do so here
-        // guests: bookingData.guestIds || [],
-        // The slug will be auto-generated from the title
+        token: Math.random().toString(36).substring(2, 15),
+        paymentStatus: 'unpaid'
       },
     })
-    
-    return NextResponse.json({ success: true, booking })
+
+    return NextResponse.json(booking)
   } catch (error) {
-    console.error("Error creating booking:", error)
-    return NextResponse.json({ error: "Failed to create booking" }, { status: 500 })
+    console.error('Error creating booking:', error)
+    return NextResponse.json(
+      { error: 'Failed to create booking' },
+      { status: 500 }
+    )
   }
 }
