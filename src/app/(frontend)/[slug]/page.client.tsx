@@ -49,7 +49,7 @@ const PageClient: React.FC<PageClientProps> = ({ page, draft, url }) => {
 
     if (!currentUser) {
       console.log('User context loaded, user not found, redirecting to login.')
-      router.push('/login')
+      router.push('/subscribe')
       return
     }
 

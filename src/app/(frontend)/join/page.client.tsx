@@ -9,6 +9,15 @@ import { useRevenueCat } from "@/providers/RevenueCat"
 import { Purchases, type Package, type PurchasesError, ErrorCode, type Product } from "@revenuecat/purchases-js"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Loader2 } from 'lucide-react'
+import { Switch } from "@/components/ui/switch"
+
+// Extend Product type to include price properties
+declare module '@revenuecat/purchases-js' {
+  interface Product {
+    priceString?: string;
+    price?: number;
+  }
+}
 
 // Add type for RevenueCat error with code
 interface RevenueCatError extends Error {
@@ -511,18 +520,6 @@ export default function JoinClient({ bookingTotal = 'N/A', bookingDuration = 'N/
     }
   }
 
-  const handleShare = () => {
-    const urlToShare = window.location.href
-    navigator.clipboard
-      .writeText(urlToShare)
-      .then(() => {
-        console.log("Booking URL copied to clipboard:", urlToShare)
-      })
-      .catch((err) => {
-        console.error("Failed to copy URL: ", err)
-      })
-  }
-
   if (loading || loadingOfferings) {
     return (
       <div className="container py-10">
@@ -593,18 +590,18 @@ export default function JoinClient({ bookingTotal = 'N/A', bookingDuration = 'N/
           </div>
 
           {/* Wine Package Add-on */}
-          <div 
-            className={`p-6 rounded-lg border-2 cursor-pointer transition-all ${
-              isWineSelected
-                ? "border-primary bg-primary/5" 
-                : "border-border hover:border-primary/50"
-            }`}
-            onClick={() => {
-              setIsWineSelected(!isWineSelected)
-            }}
-          >
-            <h3 className="text-xl font-semibold mb-2">{packageDetails.wine.title}</h3>
-            <p className="text-muted-foreground mb-4">{packageDetails.wine.description}</p>
+          <div className="p-6 rounded-lg border-2 border-border hover:border-primary/50 transition-all">
+            <div className="flex justify-between items-start mb-4">
+              <div>
+                <h3 className="text-xl font-semibold mb-2">{packageDetails.wine.title}</h3>
+                <p className="text-muted-foreground">{packageDetails.wine.description}</p>
+              </div>
+              <Switch
+                id="wine-package"
+                checked={isWineSelected}
+                onCheckedChange={setIsWineSelected}
+              />
+            </div>
             <ul className="mb-4 space-y-2">
               {packageDetails.wine.features.map((feature, index) => (
                 <li key={index} className="flex items-center text-sm">
@@ -613,16 +610,6 @@ export default function JoinClient({ bookingTotal = 'N/A', bookingDuration = 'N/
                 </li>
               ))}
             </ul>
-            <div className="flex justify-between items-center">
-              <span className="text-2xl font-bold">
-                {formatPrice(packagePrice ? packagePrice * 1.5 : null)}/night
-              </span>
-              <div className={`w-5 h-5 rounded-full border-2 ${
-                isWineSelected
-                  ? "border-primary bg-primary" 
-                  : "border-border"
-              }`} />
-            </div>
           </div>
         </div>
       </div>
@@ -685,29 +672,6 @@ export default function JoinClient({ bookingTotal = 'N/A', bookingDuration = 'N/
             Please select a package to continue.
           </p>
         )}
-      </div>
-
-      {/* Share Booking Section */}
-      <div className="mb-8 flex items-center gap-3 bg-muted p-4 rounded-lg border border-border">
-        <Input
-          type="text"
-          value={typeof window !== 'undefined' ? window.location.href : ''}
-          readOnly
-          className="flex-grow bg-background cursor-default"
-        />
-        <Button variant="secondary" onClick={handleShare}>Share Booking</Button>
-      </div>
-
-      {/* Guests Section */}
-      <h2 className="text-2xl font-semibold mt-8 mb-4">Available Guests</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {guests.map((guest) => (
-          <div key={guest.id} className="bg-card p-6 rounded-lg shadow-sm border border-border">
-            <h3 className="text-xl font-semibold mb-3">{guest.name}</h3>
-            <p className="text-muted-foreground mb-2">Email: {guest.email}</p>
-            <p className="text-muted-foreground">Role: {guest.role?.join(', ')}</p>
-          </div>
-        ))}
       </div>
     </div>
   )
